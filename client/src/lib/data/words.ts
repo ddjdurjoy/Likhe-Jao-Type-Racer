@@ -1,0 +1,122 @@
+export const englishWords = {
+  easy: [
+    "the", "be", "to", "of", "and", "a", "in", "that", "have", "I",
+    "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+    "this", "but", "his", "by", "from", "they", "we", "say", "her", "she",
+    "or", "an", "will", "my", "one", "all", "would", "there", "their", "what",
+    "so", "up", "out", "if", "about", "who", "get", "which", "go", "me",
+    "when", "make", "can", "like", "time", "no", "just", "him", "know", "take",
+    "people", "into", "year", "your", "good", "some", "could", "them", "see", "other",
+    "than", "then", "now", "look", "only", "come", "its", "over", "think", "also",
+    "back", "after", "use", "two", "how", "our", "work", "first", "well", "way",
+    "even", "new", "want", "because", "any", "these", "give", "day", "most", "us"
+  ],
+  medium: [
+    "between", "something", "through", "important", "different", "example", "together",
+    "another", "remember", "everything", "beautiful", "government", "development",
+    "understand", "experience", "information", "international", "environment", "community",
+    "organization", "performance", "opportunity", "relationship", "management", "technology",
+    "professional", "competition", "communication", "responsibility", "situation", "available",
+    "traditional", "education", "especially", "significant", "individual", "particular",
+    "commercial", "production", "application", "immediately", "population", "generation",
+    "successful", "absolutely", "independent", "interesting", "established", "knowledge",
+    "wonderful", "certainly", "background", "apparently", "television", "possibility",
+    "completely", "eventually", "university", "expression", "previously", "following"
+  ],
+  hard: [
+    "acknowledgement", "accomplishment", "appropriateness", "authentication", "autobiography",
+    "biodegradable", "characteristics", "circumnavigation", "communication", "comprehension",
+    "congratulations", "consciousness", "constitutional", "crystallization", "demonstration",
+    "differentiation", "disappointment", "electromagnetic", "entrepreneurship", "environmental",
+    "extraordinarily", "fundamentalism", "generalization", "heterogeneous", "hyperventilate",
+    "implementation", "incomprehensible", "infrastructure", "initialization", "institutionalize",
+    "instrumentation", "internationalize", "interpretation", "interconnectedness", "irresponsibility",
+    "juxtaposition", "knowledgeable", "lymphadenopathy", "microprocessor", "miscommunication",
+    "misunderstanding", "multidimensional", "nationalization", "neurophysiology", "nonprofessional",
+    "operationalize", "organizational", "overrepresentation", "parliamentarian", "pharmaceutical",
+    "photosynthesis", "postmodernism", "preconditioned", "predetermination", "professionalism"
+  ]
+};
+
+export const banglaWords = {
+  easy: [
+    "আমি", "তুমি", "সে", "এটা", "ওটা", "কি", "কেন", "কোথায়", "কখন", "কিভাবে",
+    "বাড়ি", "পানি", "খাবার", "ভালো", "মন্দ", "বড়", "ছোট", "নতুন", "পুরাতন", "সুন্দর",
+    "দেশ", "মানুষ", "কাজ", "সময়", "দিন", "রাত", "সকাল", "বিকাল", "সন্ধ্যা", "মাস",
+    "বছর", "ঘর", "দরজা", "জানালা", "চেয়ার", "টেবিল", "বই", "কলম", "খাতা", "স্কুল",
+    "শিক্ষক", "ছাত্র", "বাবা", "মা", "ভাই", "বোন", "বন্ধু", "শত্রু", "প্রেম", "ভালোবাসা",
+    "গান", "নাচ", "খেলা", "সিনেমা", "নাটক", "কবিতা", "গল্প", "উপন্যাস", "ছবি", "রং",
+    "লাল", "সবুজ", "নীল", "হলুদ", "সাদা", "কালো", "গোলাপি", "বেগুনি", "কমলা", "ধূসর",
+    "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ"
+  ],
+  medium: [
+    "বাংলাদেশ", "স্বাধীনতা", "গণতন্ত্র", "সংবিধান", "সরকার", "প্রধানমন্ত্রী", "রাষ্ট্রপতি",
+    "সংসদ", "নির্বাচন", "ভোট", "অধিকার", "কর্তব্য", "দায়িত্ব", "শিক্ষা", "স্বাস্থ্য",
+    "পরিবেশ", "প্রযুক্তি", "বিজ্ঞান", "গবেষণা", "উন্নয়ন", "অর্থনীতি", "ব্যবসা", "শিল্প",
+    "কৃষি", "মৎস্য", "পশু", "প্রাণী", "উদ্ভিদ", "বন", "পাহাড়", "নদী", "সমুদ্র",
+    "আকাশ", "মেঘ", "বৃষ্টি", "রোদ", "বাতাস", "ঝড়", "বন্যা", "খরা", "ভূমিকম্প",
+    "সাহিত্য", "সংস্কৃতি", "ঐতিহ্য", "রীতিনীতি", "উৎসব", "পার্বণ", "ধর্ম", "দর্শন",
+    "ইতিহাস", "ভূগোল", "গণিত", "পদার্থ", "রসায়ন", "জীববিজ্ঞান", "চিকিৎসা", "প্রকৌশল"
+  ],
+  hard: [
+    "গণপ্রজাতন্ত্রী", "সংবিধানিক", "গণতান্ত্রিক", "সামাজিকতা", "ধর্মনিরপেক্ষতা", "জাতীয়তাবাদ",
+    "আন্তর্জাতিক", "বিশ্বায়ন", "প্রযুক্তিগত", "শিল্পায়ন", "নগরায়ণ", "আধুনিকায়ন",
+    "পরিবেশবাদ", "টেকসই", "জলবায়ু", "পরিবর্তন", "দূষণ", "সংরক্ষণ", "জীববৈচিত্র্য",
+    "বাস্তুসংস্থান", "পুনর্ব্যবহারযোগ্য", "নবায়নযোগ্য", "জ্বালানি", "বিদ্যুৎ",
+    "যোগাযোগ", "তথ্যপ্রযুক্তি", "কম্পিউটার", "ইন্টারনেট", "সফটওয়্যার", "হার্ডওয়্যার",
+    "কৃত্রিম", "বুদ্ধিমত্তা", "স্বয়ংক্রিয়", "রোবটিক্স", "মহাকাশ", "উপগ্রহ",
+    "মহাবিশ্ব", "গ্রহ", "নক্ষত্র", "ছায়াপথ", "ব্ল্যাকহোল", "মাধ্যাকর্ষণ"
+  ]
+};
+
+export const englishQuotes = [
+  "The only way to do great work is to love what you do",
+  "Innovation distinguishes between a leader and a follower",
+  "Stay hungry stay foolish",
+  "Your time is limited so do not waste it living someone elses life",
+  "The future belongs to those who believe in the beauty of their dreams",
+  "Success is not final failure is not fatal it is the courage to continue that counts",
+  "In the middle of difficulty lies opportunity",
+  "The only thing we have to fear is fear itself",
+  "To be or not to be that is the question",
+  "All that glitters is not gold"
+];
+
+export const banglaQuotes = [
+  "আমার সোনার বাংলা আমি তোমায় ভালোবাসি",
+  "মানুষ মানুষের জন্য জীবন জীবনের জন্য",
+  "যে জাতি জীবন হারাতে ভয় করে সে জাতি কখনো স্বাধীন হতে পারে না",
+  "এই পৃথিবী অবাক তাকিয়ে রয় সবুজ বনের নীল আকাশের সুখে",
+  "আমি বাংলায় গান গাই আমি বাংলার গান গাই",
+  "একুশ মানে মাথা নত না করা",
+  "শোন একটি মুজিবরের থেকে লক্ষ মুজিবরের কণ্ঠস্বর",
+  "আমার ভাইয়ের রক্তে রাঙানো একুশে ফেব্রুয়ারি",
+  "বাংলাদেশ জিন্দাবাদ",
+  "জয় বাংলা"
+];
+
+export function getRandomWords(
+  language: "en" | "bn",
+  difficulty: "easy" | "medium" | "hard",
+  count: number
+): string[] {
+  const wordList = language === "en" ? englishWords[difficulty] : banglaWords[difficulty];
+  const result: string[] = [];
+  const shuffled = [...wordList].sort(() => Math.random() - 0.5);
+  
+  for (let i = 0; i < count && i < shuffled.length; i++) {
+    result.push(shuffled[i]);
+  }
+  
+  while (result.length < count) {
+    result.push(shuffled[Math.floor(Math.random() * shuffled.length)]);
+  }
+  
+  return result;
+}
+
+export function getRandomQuote(language: "en" | "bn"): string[] {
+  const quotes = language === "en" ? englishQuotes : banglaQuotes;
+  const quote = quotes[Math.floor(Math.random() * quotes.length)];
+  return quote.split(" ");
+}

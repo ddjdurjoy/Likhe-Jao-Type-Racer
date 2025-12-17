@@ -1,1 +1,0 @@
-# Likhe-Jao-Type-Racer
