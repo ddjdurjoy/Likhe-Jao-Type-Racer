@@ -72,40 +72,45 @@ export function useTypingEngine({
 
       soundManager.resumeContext();
 
-      if (e.key === "Backspace" || e.key === " " || e.key === "Enter") {
+      // Handle backspace
+      if (e.key === "Backspace") {
         bijoyProcessor.current.reset();
+        // Allow default backspace behavior for both Bengali and English
+        return;
+      }
 
-        if (e.key === " " || e.key === "Enter") {
-          e.preventDefault();
-          const currentWord = words[currentWordIndex];
+      // Handle space and enter
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        bijoyProcessor.current.reset();
+        const currentWord = words[currentWordIndex];
 
-          if (currentInput === currentWord) {
-            soundManager.playWordComplete();
-            setCorrectChars((prev) => prev + currentWord.length + 1);
-            setTotalChars((prev) => prev + currentInput.length + 1);
+        if (currentInput === currentWord) {
+          soundManager.playWordComplete();
+          setCorrectChars((prev) => prev + currentWord.length + 1);
+          setTotalChars((prev) => prev + currentInput.length + 1);
 
-            const nextIndex = currentWordIndex + 1;
-            setCurrentWordIndex(nextIndex);
-            setCurrentInput("");
-            onWordComplete?.(currentWordIndex);
+          const nextIndex = currentWordIndex + 1;
+          setCurrentWordIndex(nextIndex);
+          setCurrentInput("");
+          onWordComplete?.(currentWordIndex);
 
-            if (nextIndex >= words.length) {
-              setIsFinished(true);
-              soundManager.playFinish();
-              const stats = {
-                wpm: calculateWPM(),
-                accuracy: calculateAccuracy(),
-                correctChars: correctChars + currentWord.length + 1,
-                totalChars: totalChars + currentInput.length + 1,
-                progress: 100,
-              };
-              onRaceComplete?.(stats);
-            }
-          } else {
-            soundManager.playError();
-            setErrors((prev) => prev + 1);
-            setTotalChars((prev) => prev + currentInput.length);
+          if (nextIndex >= words.length) {
+            setIsFinished(true);
+            soundManager.playFinish();
+            const stats = {
+              wpm: calculateWPM(),
+              accuracy: calculateAccuracy(),
+              correctChars: correctChars + currentWord.length + 1,
+              totalChars: totalChars + currentInput.length + 1,
+              progress: 100,
+            };
+            onRaceComplete?.(stats);
           }
+        } else {
+          soundManager.playError();
+          setErrors((prev) => prev + 1);
+          setTotalChars((prev) => prev + currentInput.length);
         }
         return;
       }
@@ -158,11 +163,18 @@ export function useTypingEngine({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!enabled || isFinished) return;
 
+      // For English, allow natural typing and backspace
       if (language === "en") {
         setCurrentInput(e.target.value);
+      } else {
+        // For Bengali, allow backspace to work naturally
+        // The value will be less than current when backspace is pressed
+        if (e.target.value.length < currentInput.length) {
+          setCurrentInput(e.target.value);
+        }
       }
     },
-    [enabled, isFinished, language]
+    [enabled, isFinished, language, currentInput]
   );
 
   const reset = useCallback(() => {
