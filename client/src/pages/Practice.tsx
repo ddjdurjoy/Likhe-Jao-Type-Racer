@@ -119,7 +119,7 @@ export default function Practice() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full bg-background flex flex-col overflow-hidden">
       <header className="flex items-center justify-between p-4 border-b border-border">
         <Button
           variant="ghost"
@@ -143,7 +143,7 @@ export default function Practice() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col md:flex-row gap-4 p-4">
+      <main className="flex-1 min-h-0 flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
         <aside className="w-full md:w-64 space-y-4">
           <Card className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
@@ -210,7 +210,7 @@ export default function Practice() {
           </Card>
 
           {sessionStats.races > 0 && (
-            <Card className="p-4 overflow-auto max-h-72">
+            <Card className="p-4 overflow-auto max-h-72 min-h-0 flex-1">
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 {language === "bn" ? "সেশন পরিসংখ্যান" : "Session Stats"}
               </h3>
