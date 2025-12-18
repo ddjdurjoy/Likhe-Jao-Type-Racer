@@ -61,7 +61,9 @@ function App() {
       <TooltipProvider>
         <ThemeInitializer />
         <Toaster />
-        <Router />
+        <div className="h-screen overflow-hidden flex flex-col">
+          <Router />
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
