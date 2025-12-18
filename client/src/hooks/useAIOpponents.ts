@@ -15,12 +15,18 @@ const AI_CONFIGS: Record<string, AIConfig> = {
 };
 
 export function useAIOpponents(wordCount: number) {
-  const { raceState, players, updatePlayer } = useGameStore();
+  const raceState = useGameStore((s) => s.raceState);
+  const updatePlayer = useGameStore((s) => s.updatePlayer);
   const intervalsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const progressRef = useRef<Map<string, number>>(new Map());
+  const aiSnapshotRef = useRef<Array<{ id: string; aiDifficulty: keyof typeof AI_CONFIGS }>>([]);
 
   const stopAllAI = useCallback(() => {
-    intervalsRef.current.forEach((interval) => clearInterval(interval));
+    intervalsRef.current.forEach((interval, key) => {
+      // Clear both intervals and any timeouts stored
+      clearInterval(interval as any);
+      clearTimeout(interval as any);
+    });
     intervalsRef.current.clear();
     progressRef.current.clear();
   }, []);
@@ -61,20 +67,26 @@ export function useAIOpponents(wordCount: number) {
   );
 
   useEffect(() => {
+    // Reset any existing timers when (re)starting
+    stopAllAI();
     if (raceState === "racing") {
-      const aiPlayers = players.filter((p) => p.isAI);
+      const snapshotPlayers = useGameStore.getState().players;
+      const aiPlayers = snapshotPlayers.filter((p) => p.isAI);
+      aiSnapshotRef.current = aiPlayers.map((p) => ({ id: p.id, aiDifficulty: (p.aiDifficulty || "steady") as keyof typeof AI_CONFIGS }));
 
-      aiPlayers.forEach((player) => {
-        const config = AI_CONFIGS[player.aiDifficulty || "steady"];
+      aiSnapshotRef.current.forEach((player) => {
+        const config = AI_CONFIGS[player.aiDifficulty];
         progressRef.current.set(player.id, 0);
 
         const startDelay = Math.random() * 500;
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           const interval = setInterval(() => {
             simulateTyping(player.id, config);
           }, 100);
           intervalsRef.current.set(player.id, interval);
         }, startDelay);
+        // Store timeout cleanup as an interval for simplicity
+        intervalsRef.current.set(`${player.id}-timeout` as any, timeout as any);
       });
     } else if (raceState === "finished" || raceState === "waiting") {
       stopAllAI();
@@ -83,7 +95,7 @@ export function useAIOpponents(wordCount: number) {
     return () => {
       stopAllAI();
     };
-  }, [raceState, players, simulateTyping, stopAllAI]);
+  }, [raceState, simulateTyping, stopAllAI]);
 
   useEffect(() => {
     return () => {

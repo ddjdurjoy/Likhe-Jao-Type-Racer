@@ -68,10 +68,10 @@ export default function Race() {
 
   const handleWordComplete = useCallback(
     (wordIndex: number) => {
-      const progress = ((wordIndex + 1) / words.length) * 100;
-      updatePlayer("player", { progress });
+      // No-op because progress is derived in the throttled effect
+      // This avoids double updates that can cause loops
     },
-    [words.length, updatePlayer]
+    []
   );
 
   const handleRaceComplete = useCallback(
@@ -130,16 +130,26 @@ export default function Race() {
     enabled: raceState === "racing",
   });
 
+  // Throttle store updates to avoid render-update loops
+  const lastSentRef = useRef<{ progress: number; wpm: number; accuracy: number } | null>(null);
   useEffect(() => {
-    if (raceState === "racing") {
-      const progress = (currentWordIndex / words.length) * 100;
-      updatePlayer("player", {
-        progress,
-        wpm: stats.wpm,
-        accuracy: stats.accuracy,
-      });
+    if (raceState !== "racing") return;
+
+    const progress = (currentWordIndex / words.length) * 100;
+    const next = { progress, wpm: stats.wpm, accuracy: stats.accuracy };
+    const prev = lastSentRef.current;
+
+    const changed =
+      !prev ||
+      Math.abs(prev.progress - next.progress) > 0.0001 ||
+      prev.wpm !== next.wpm ||
+      prev.accuracy !== next.accuracy;
+
+    if (changed) {
+      lastSentRef.current = next;
+      updatePlayer("player", next);
     }
-  }, [currentWordIndex, stats, words.length, raceState, updatePlayer]);
+  }, [currentWordIndex, stats.wpm, stats.accuracy, words.length, raceState, updatePlayer]);
 
   const handleCountdownComplete = useCallback(() => {
     setRaceState("racing");
