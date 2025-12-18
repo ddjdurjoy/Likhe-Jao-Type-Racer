@@ -12,11 +12,10 @@ export function RaceTrack() {
     return b.progress - a.progress;
   });
 
+  // Derive positions without mutating store state during render
+  const positions = new Map<string, number>();
   sortedPlayers.forEach((player, index) => {
-    const originalPlayer = players.find((p) => p.id === player.id);
-    if (originalPlayer) {
-      originalPlayer.position = index + 1;
-    }
+    positions.set(player.id, index + 1);
   });
 
   return (
@@ -55,7 +54,7 @@ export function RaceTrack() {
       ))}
 
       <div className="absolute inset-0 left-16 right-12">
-        {players.map((player, index) => (
+        {sortedPlayers.map((player, index) => (
           <Car
             key={player.id}
             carId={player.carId}
@@ -63,7 +62,7 @@ export function RaceTrack() {
             playerName={player.name}
             isPlayer={!player.isAI}
             isAI={player.isAI}
-            position={player.position}
+            position={positions.get(player.id) || player.position}
             lane={index}
             isRacing={isRacing}
           />
