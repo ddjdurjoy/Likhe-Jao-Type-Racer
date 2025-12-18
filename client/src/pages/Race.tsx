@@ -42,11 +42,7 @@ export default function Race() {
 
   const saveRaceResultMutation = useMutation({
     mutationFn: async (raceResult: InsertRaceResult) => {
-      return apiRequest("/api/races", {
-        method: "POST",
-        body: JSON.stringify(raceResult),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("POST", "/api/races", raceResult);
     },
   });
 
