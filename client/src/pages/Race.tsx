@@ -8,6 +8,7 @@ import { getRandomWords } from "@/lib/data/words";
 import { soundManager } from "@/lib/utils/soundManager";
 import { apiRequest } from "@/lib/queryClient";
 import { RaceTrack } from "@/components/game/RaceTrack";
+import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 import { TypingInput } from "@/components/game/TypingInput";
 import { StatsDisplay, RaceResults } from "@/components/game/StatsDisplay";
 import { Countdown } from "@/components/game/Countdown";
@@ -217,7 +218,8 @@ export default function Race() {
 
       <main className="flex-1 flex flex-col min-h-0 p-4 gap-4">
         <div className="flex-1 min-h-0">
-          <div className="h-full">
+          <div className="h-full relative">
+            <AnimatedBackground />
             <RaceTrack />
           </div>
         </div>

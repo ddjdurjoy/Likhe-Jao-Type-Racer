@@ -211,4 +211,9 @@ export const CARS: Car[] = [
   { id: 2, name: "Golden Flash", color: "#eab308", unlocked: false },
   { id: 3, name: "Shadow Rider", color: "#6366f1", unlocked: false },
   { id: 4, name: "Neon Beast", color: "#22c55e", unlocked: false },
+  { id: 5, name: "Crimson Comet", color: "#dc2626", unlocked: false },
+  { id: 6, name: "Azure Arrow", color: "#0ea5e9", unlocked: false },
+  { id: 7, name: "Violet Viper", color: "#8b5cf6", unlocked: false },
+  { id: 8, name: "Emerald Edge", color: "#10b981", unlocked: false },
+  { id: 9, name: "Cyber Glide", color: "#14b8a6", unlocked: false },
 ];
