@@ -4,9 +4,12 @@ import { CarPreview } from "@/components/game/Car";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { ArrowLeft, Lock, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 
 export default function Garage() {
   const [, setLocation] = useLocation();
@@ -52,8 +55,13 @@ export default function Garage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="flex items-center justify-between p-4 border-b border-border sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <div className="relative min-h-screen bg-background flex flex-col">
+      <div className="absolute inset-0 pointer-events-none">
+        <AnimatedBackground />
+      </div>
+      <div className="absolute inset-0 bg-background/60" aria-hidden />
+
+      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
         <Button
           variant="ghost"
           size="sm"
@@ -65,17 +73,19 @@ export default function Garage() {
           {language === "bn" ? "ফিরে যান" : "Back"}
         </Button>
 
-        <h1 className="text-xl font-display font-bold">
+        <h1 className="text-xl font-display font-bold flex items-center gap-2">
+          <Lock className="w-5 h-5 text-primary" />
           {language === "bn" ? "গ্যারেজ" : "Garage"}
         </h1>
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
+          <WeatherToggle />
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 p-6 overflow-y-auto no-scrollbar">
+      <main className="relative z-10 flex-1 p-6 overflow-y-auto no-scrollbar">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-heading font-bold mb-2">

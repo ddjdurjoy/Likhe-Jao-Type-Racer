@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, RefreshCw, BookOpen, MessageSquare, Code, Zap } from "lucide-react";
@@ -35,6 +36,8 @@ const codeSnippets = [
   "let var const string number boolean",
   "return undefined null object array",
 ];
+
+import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 
 export default function Practice() {
   const [, setLocation] = useLocation();
@@ -119,8 +122,12 @@ export default function Practice() {
       : 0;
 
   return (
-    <div className="h-full bg-background flex flex-col overflow-hidden">
-      <header className="flex items-center justify-between p-4 border-b border-border">
+    <div className="relative min-h-screen bg-background flex flex-col overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <AnimatedBackground />
+      </div>
+      <div className="absolute inset-0 bg-background/60" aria-hidden />
+      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
         <Button
           variant="ghost"
           size="sm"
@@ -132,18 +139,20 @@ export default function Practice() {
           {language === "bn" ? "ফিরে যান" : "Back"}
         </Button>
 
-        <h1 className="text-xl font-display font-bold">
+        <h1 className="text-xl font-display font-bold flex items-center gap-2">
+          <Zap className="w-5 h-5 text-primary" />
           {language === "bn" ? "অনুশীলন মোড" : "Practice Mode"}
         </h1>
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <SoundControls />
+          <WeatherToggle />
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
+      <main className="relative z-10 flex-1 min-h-0 flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
         <aside className="w-full md:w-64 space-y-4">
           <Card className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle, LanguageSelector } from "@/components/ui/LanguageToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
 import { CarPreview } from "@/components/game/Car";
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Play, Users, Trophy, Settings, Zap, Target, Clock } from "lucide-react";
 import type { Difficulty, Language } from "@shared/schema";
+
+import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -76,8 +79,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="flex items-center justify-between p-4 border-b border-border">
+    <div className="relative min-h-screen bg-background flex flex-col">
+      <div className="absolute inset-0 pointer-events-none">
+        <AnimatedBackground />
+      </div>
+      <div className="absolute inset-0 bg-background/60" aria-hidden />
+
+      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-3">
           {language === "bn" ? (
             <img src="/Logo%20For%20Bengali.svg" alt="লিখে যাও" className="h-10 w-auto" />
@@ -89,6 +97,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <SoundControls />
+          <WeatherToggle />
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -101,9 +110,9 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-6 gap-8">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 gap-8">
         <div className="text-center space-y-4 max-w-lg">
-          <h2 className="text-4xl md:text-5xl font-display font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-display font-bold animated-heading">
             {language === "bn" ? "লিখে যাও" : "Type to Win"}
           </h2>
           <p className="text-lg text-muted-foreground">
@@ -137,7 +146,7 @@ export default function Home() {
 
           <Button
             size="lg"
-            variant="secondary"
+            variant="outline"
             className="h-20 text-lg font-semibold gap-3"
             onClick={handleGarage}
             data-testid="button-garage"
@@ -148,7 +157,7 @@ export default function Home() {
 
           <Button
             size="lg"
-            variant="secondary"
+            variant="outline"
             className="h-20 text-lg font-semibold gap-3"
             onClick={handleLeaderboard}
             data-testid="button-leaderboard"
@@ -159,7 +168,7 @@ export default function Home() {
         </div>
 
         {totalRaces > 0 && (
-          <Card className="w-full max-w-2xl p-6">
+          <div className="w-full max-w-2xl p-6 bg-transparent border border-card-border rounded-lg">
             <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
               <Users className="w-4 h-4" />
               {language === "bn" ? "আপনার পরিসংখ্যান" : "Your Stats"}
@@ -190,7 +199,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         <div className="flex items-center gap-4 opacity-60">
@@ -201,7 +210,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="p-4 text-center text-sm text-muted-foreground border-t border-border">
+      <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground border-t border-border">
         {language === "bn"
           ? "বাংলায় টাইপ করুন Bijoy কীবোর্ড লেআউট দিয়ে"
           : "Type in Bangla using Bijoy keyboard layout"}
@@ -271,7 +280,7 @@ export default function Home() {
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
-            <div className="space-y-2">
+<div className="space-y-2">
               <label className="text-sm font-medium">
                 {language === "bn" ? "নাম" : "Username"}
               </label>

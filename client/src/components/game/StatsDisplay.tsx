@@ -110,7 +110,7 @@ function StatCard({ label, value, icon, color }: StatCardProps) {
   };
 
   return (
-    <div className="flex-1 bg-card rounded-lg p-4 border border-card-border">
+    <div className="flex-1 bg-transparent rounded-lg p-4 border border-card-border">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("opacity-70", colorClasses[color])}>{icon}</div>
         <span className="text-xs text-muted-foreground uppercase tracking-wide">

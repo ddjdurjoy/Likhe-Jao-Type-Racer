@@ -7,10 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Trophy, Medal, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@shared/schema";
+
+import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 
 export default function Leaderboard() {
   const [, setLocation] = useLocation();
@@ -54,8 +57,12 @@ export default function Leaderboard() {
   const playerRank = totalRaces > 0 ? Math.max(11 - Math.floor(bestWpm / 10), 1) : null;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="flex items-center justify-between p-4 border-b border-border">
+    <div className="relative min-h-screen bg-background flex flex-col">
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <AnimatedBackground />
+      </div>
+      <div className="absolute inset-0 bg-background/60 pointer-events-none z-0" aria-hidden />
+      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
         <Button
           variant="ghost"
           size="sm"
@@ -74,11 +81,12 @@ export default function Leaderboard() {
 
         <div className="flex items-center gap-2">
           <LanguageToggle />
+          <WeatherToggle />
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="flex-1 p-6">
+      <main className="relative z-10 flex-1 p-6">
         <div className="max-w-3xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-3 w-full">

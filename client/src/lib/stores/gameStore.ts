@@ -17,6 +17,7 @@ interface GameStore {
   soundEnabled: boolean;
   volume: number;
   selectedCarId: number;
+  weather: 'none' | 'rain' | 'snow' | 'leaf' | 'flower';
   username: string;
   totalRaces: number;
   totalWins: number;
@@ -36,6 +37,7 @@ interface GameStore {
   setEndTime: (time: number | null) => void;
   setCountdown: (count: number) => void;
   setLanguage: (lang: Language) => void;
+  setWeather: (w: 'none' | 'rain' | 'snow' | 'leaf' | 'flower') => void;
   setDifficulty: (diff: Difficulty) => void;
   setTheme: (theme: Theme) => void;
   setSoundEnabled: (enabled: boolean) => void;
@@ -70,6 +72,7 @@ export const useGameStore = create<GameStore>()(
       soundEnabled: true,
       volume: 80,
       selectedCarId: 0,
+      weather: 'none',
       username: "",
       totalRaces: 0,
       totalWins: 0,
@@ -94,6 +97,7 @@ export const useGameStore = create<GameStore>()(
       setEndTime: (endTime) => set({ endTime }),
       setCountdown: (countdown) => set({ countdown }),
       setLanguage: (language) => set({ language }),
+      setWeather: (weather) => set({ weather }),
       setDifficulty: (difficulty) => set({ difficulty }),
       setTheme: (theme) => set({ theme }),
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
@@ -192,6 +196,7 @@ export const useGameStore = create<GameStore>()(
         soundEnabled: state.soundEnabled,
         volume: state.volume,
         selectedCarId: state.selectedCarId,
+        weather: state.weather,
         username: state.username,
         totalRaces: state.totalRaces,
         totalWins: state.totalWins,

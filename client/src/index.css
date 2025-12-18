@@ -1,5 +1,52 @@
 @tailwind base;
 
+/* Theme-colored caret and selection */
+
+/* Animated heading text shimmer */
+@keyframes rovodev_text_shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+.animated-heading {
+  /* Vibrant shimmer with a bright highlight band and subtle stroke */
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.85) 20%,
+    #ffffff 40%,
+    hsl(var(--accent, var(--primary))) 60%,
+    hsl(var(--primary)) 80%,
+    hsl(var(--primary) / 0.85) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rovodev_text_shimmer 6s linear infinite;
+}
+
+@keyframes rovodev_text_glow {
+  0% {
+    text-shadow:
+      0 0 6px hsl(var(--primary) / 0.35),
+      0 0 16px hsl(var(--primary) / 0.2);
+  }
+  50% {
+    text-shadow:
+      0 0 10px hsl(var(--primary) / 0.7),
+      0 0 28px hsl(var(--primary) / 0.4);
+  }
+  100% {
+    text-shadow:
+      0 0 6px hsl(var(--primary) / 0.35),
+      0 0 16px hsl(var(--primary) / 0.2);
+  }
+}
+input, textarea { caret-color: hsl(var(--primary)); }
+::selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
+::-moz-selection { background: hsl(var(--primary) / 0.35); color: hsl(var(--foreground)); }
+
+
 /* Hide scrollbars but keep scroll functionality */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
