@@ -24,6 +24,10 @@ export function ThemeToggle() {
     const root = document.documentElement;
     root.classList.remove("light", "dark", "neon", "sunset");
 
+    // Add theme class for CSS variable scopes
+    root.classList.add(theme);
+
+    // Manage tailwind dark mode class for non-light themes
     if (theme === "light") {
       root.classList.remove("dark");
     } else {
@@ -31,17 +35,19 @@ export function ThemeToggle() {
     }
 
     if (theme === "neon") {
-      root.style.setProperty("--primary", "280 100% 60%");
+      // Neon Racer primary
+      root.style.setProperty("--primary", "262 83% 58%"); /* #7C3AED */
       root.style.setProperty("--primary-foreground", "0 0% 100%");
-      root.style.setProperty("--ring", "280 100% 60%");
+      root.style.setProperty("--ring", "262 83% 58%");
     } else if (theme === "sunset") {
-      root.style.setProperty("--primary", "25 95% 53%");
+      // Sunset Drive primary
+      root.style.setProperty("--primary", "20 90% 58%"); /* warm orange */
       root.style.setProperty("--primary-foreground", "0 0% 100%");
-      root.style.setProperty("--ring", "25 95% 53%");
+      root.style.setProperty("--ring", "20 90% 58%");
     } else {
-      root.style.setProperty("--primary", "217 91% 60%");
+      root.style.setProperty("--primary", "183 100% 36%");
       root.style.setProperty("--primary-foreground", "0 0% 98%");
-      root.style.setProperty("--ring", "217 91% 60%");
+      root.style.setProperty("--ring", "183 100% 36%");
     }
   }, [theme]);
 

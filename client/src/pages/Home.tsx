@@ -79,15 +79,11 @@ export default function Home() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Zap className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-display font-bold tracking-wide">
-              LIKHE JAO
-            </h1>
-            <p className="text-xs text-muted-foreground">Type Racer</p>
-          </div>
+          {language === "bn" ? (
+            <img src="/Logo%20For%20Bengali.svg" alt="লিখে যাও" className="h-10 w-auto" />
+          ) : (
+            <img src="/Logo%20For%20English.svg" alt="Likhe Jao" className="h-10 w-auto" />
+          )}
         </div>
 
         <div className="flex items-center gap-2">
