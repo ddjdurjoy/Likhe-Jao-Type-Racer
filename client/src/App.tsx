@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CursorVelocityFX } from "@/components/ui/CursorVelocityFX";
 import { useEffect } from "react";
 import { useGameStore } from "@/lib/stores/gameStore";
 import Home from "@/pages/Home";
@@ -67,6 +68,7 @@ function App() {
         <ThemeInitializer />
         <Toaster />
         <div className="h-screen overflow-hidden flex flex-col">
+          <CursorVelocityFX />
           <Router />
         </div>
       </TooltipProvider>

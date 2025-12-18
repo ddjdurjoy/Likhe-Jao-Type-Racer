@@ -211,9 +211,11 @@ export default function Home() {
       </main>
 
       <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground border-t border-border">
-        {language === "bn"
-          ? "বাংলায় টাইপ করুন Bijoy কীবোর্ড লেআউট দিয়ে"
-          : "Type in Bangla using Bijoy keyboard layout"}
+        <span>2026 </span>
+        <a href="https://www.youtube.com/@ddjDurjoy" target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">
+          Durjoy Sir
+        </a>
+        <span> | All rights reserved.</span>
       </footer>
 
       <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
