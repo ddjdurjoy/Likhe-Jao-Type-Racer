@@ -163,18 +163,57 @@ export function useTypingEngine({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!enabled || isFinished) return;
 
+      const maybeFinishWithoutSpace = (nextInput: string) => {
+        const isLastWord = currentWordIndex === words.length - 1;
+        const currentWord = words[currentWordIndex] || "";
+        if (isLastWord && nextInput === currentWord) {
+          // Finish without requiring trailing space
+          setIsFinished(true);
+          soundManager.playFinish();
+
+          const finalStats = {
+            wpm: calculateWPM(),
+            accuracy: calculateAccuracy(),
+            correctChars: correctChars + currentWord.length,
+            totalChars: totalChars + nextInput.length,
+            progress: 100,
+          };
+
+          // Move index to end and clear input for consistency
+          setCurrentWordIndex(words.length);
+          setCurrentInput("");
+
+          onRaceComplete?.(finalStats);
+        }
+      };
+
       // For English, allow natural typing and backspace
       if (language === "en") {
-        setCurrentInput(e.target.value);
+        const value = e.target.value;
+        setCurrentInput(value);
+        maybeFinishWithoutSpace(value);
       } else {
         // For Bengali, allow backspace to work naturally
         // The value will be less than current when backspace is pressed
         if (e.target.value.length < currentInput.length) {
           setCurrentInput(e.target.value);
+          maybeFinishWithoutSpace(e.target.value);
         }
       }
     },
-    [enabled, isFinished, language, currentInput]
+    [
+      enabled,
+      isFinished,
+      language,
+      currentInput,
+      currentWordIndex,
+      words,
+      correctChars,
+      totalChars,
+      calculateWPM,
+      calculateAccuracy,
+      onRaceComplete,
+    ]
   );
 
   const reset = useCallback(() => {

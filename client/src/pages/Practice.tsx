@@ -210,7 +210,7 @@ export default function Practice() {
           </Card>
 
           {sessionStats.races > 0 && (
-            <Card className="p-4">
+            <Card className="p-4 overflow-auto max-h-72">
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 {language === "bn" ? "সেশন পরিসংখ্যান" : "Session Stats"}
               </h3>
@@ -257,7 +257,7 @@ export default function Practice() {
               {language === "bn" ? "নতুন শব্দ" : "New Words"}
             </Button>
 
-            <StatsDisplay stats={stats} compact />
+            <div className="shrink-0"><StatsDisplay stats={stats} compact /></div>
           </div>
 
           <Card className="flex-1 p-6 flex flex-col justify-center">
