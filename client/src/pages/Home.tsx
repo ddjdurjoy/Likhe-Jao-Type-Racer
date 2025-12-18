@@ -211,7 +211,7 @@ export default function Home() {
       </main>
 
       <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground border-t border-border">
-        <span>2026 </span>
+        <span>© 2026 </span>
         <a href="https://www.youtube.com/@ddjDurjoy" target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">
           Durjoy Sir
         </a>
