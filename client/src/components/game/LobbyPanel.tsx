@@ -13,12 +13,16 @@ export function LobbyPanel({
   players,
   isHost,
   onStartWithBots,
+  onStartAnyway,
+  canStartAnyway,
   waitingCount,
 }: {
   roomCode: string;
   players: LobbyPlayer[];
   isHost: boolean;
   onStartWithBots: () => void;
+  onStartAnyway: () => void;
+  canStartAnyway: boolean;
   waitingCount: number;
 }) {
   return (
@@ -46,13 +50,18 @@ export function LobbyPanel({
           ))}
         </ul>
 
-        <div className="mt-5 flex items-center justify-between">
+        <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-sm text-muted-foreground">Waiting for players... ({waitingCount} more)</div>
-          {isHost && (
-            <button onClick={onStartWithBots} className="inline-flex items-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
-              Start now with bots
+          <div className="flex items-center gap-2">
+            <button onClick={onStartAnyway} disabled={!canStartAnyway} className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50">
+              Start now
             </button>
-          )}
+            {isHost && (
+              <button onClick={onStartWithBots} className="inline-flex items-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
+                Start now with bots
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

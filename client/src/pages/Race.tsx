@@ -42,6 +42,7 @@ export default function Race() {
   const [lobbyPlayers, setLobbyPlayers] = useState<any[]>([]);
   const lobbyPlayersRef = useRef<any[]>([]);
   const [hostId, setHostId] = useState<string | null>(null);
+  const lobbyEnterAtRef = useRef<number>(Date.now());
 
   const [showResults, setShowResults] = useState(false);
   const [finalStats, setFinalStats] = useState<TypingStats | null>(null);
@@ -286,6 +287,10 @@ export default function Race() {
     socket.emit("room:startWithBots");
   }, [socket]);
 
+  const startAnyway = useCallback(() => {
+    socket.emit("room:startAnyway");
+  }, [socket]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="flex items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 pt-safe border-b border-border bg-card/50 sticky top-0">
@@ -323,6 +328,12 @@ export default function Race() {
                players={lobbyPlayers}
                isHost={isHost}
                onStartWithBots={startWithBots}
+               onStartAnyway={startAnyway}
+               canStartAnyway={(() => {
+                 const real = (lobbyPlayers || []).filter((p: any) => !String(p.id).startsWith("bot-")).length;
+                 const elapsed = Date.now() - lobbyEnterAtRef.current;
+                 return real >= 2 && real < 5 && elapsed >= 8000;
+               })()}
                waitingCount={Math.max(0, 5 - lobbyPlayers.length)}
              />
            )}

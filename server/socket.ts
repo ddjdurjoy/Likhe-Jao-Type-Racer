@@ -14,6 +14,7 @@ interface RoomState {
   players: PlayerInfo[];
   max: number;
   status: "waiting" | "countdown" | "racing" | "finished";
+  isPublic?: boolean;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -27,7 +28,16 @@ function makeCode(len = 5) {
 
 export function setupSocket(httpServer: HTTPServer) {
   const io = new Server(httpServer, {
-    cors: { origin: true, credentials: true },
+    path: "/socket.io",
+    cors: {
+      origin: [
+        "https://likhe-jao.vercel.app",
+        "https://*.vercel.app",
+        "http://localhost:5000",
+      ],
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
   });
 
   io.on("connection", (socket) => {
@@ -39,7 +49,7 @@ export function setupSocket(httpServer: HTTPServer) {
       if (room) io.to(currentRoom).emit("room:update", room);
     }
 
-    socket.on("room:create", ({ name, avatar }: { name: string; avatar?: string }) => {
+    socket.on("room:create", ({ name, avatar, isPublic }: { name: string; avatar?: string; isPublic?: boolean }) => {
       let code = makeCode();
       while (rooms.has(code)) code = makeCode();
       const state: RoomState = {
@@ -48,6 +58,7 @@ export function setupSocket(httpServer: HTTPServer) {
         players: [{ id: socket.id, name, avatar, ready: false }],
         max: 5,
         status: "waiting",
+        isPublic: !!isPublic,
       };
       rooms.set(code, state);
       socket.join(code);
@@ -129,6 +140,26 @@ export function setupSocket(httpServer: HTTPServer) {
         emitRoom();
         io.to(currentRoom!).emit("race:start");
       }, 3000);
+    });
+
+    // Public room: allow start anyway with minimum players and no bots
+    socket.on("room:startAnyway", () => {
+      if (!currentRoom) return;
+      const room = rooms.get(currentRoom);
+      if (!room) return;
+      if (room.status !== "waiting") return;
+      // Must be public room; if not flagged, treat as public by default
+      const realPlayers = room.players.filter((p) => !String(p.id).startsWith("bot-"));
+      if (realPlayers.length >= 2 && realPlayers.length <= room.max) {
+        room.status = "countdown";
+        emitRoom();
+        io.to(currentRoom).emit("race:countdown", { from: 3 });
+        setTimeout(() => {
+          room.status = "racing";
+          emitRoom();
+          io.to(currentRoom!).emit("race:start");
+        }, 3000);
+      }
     });
 
     socket.on("race:position", ({ progress }: { progress: number }) => {

@@ -61,6 +61,8 @@ app.use((req, res, next) => {
 
 (async () => {
   await registerRoutes(httpServer, app);
+  // health endpoint for checks
+  app.get('/health', (_req, res) => res.status(200).send('ok'));
   const { setupSocket } = await import("./socket");
   setupSocket(httpServer);
 
