@@ -142,6 +142,17 @@ export function setupSocket(httpServer: HTTPServer) {
       }, 3000);
     });
 
+    // Update room privacy (host only, while waiting)
+    socket.on("room:updatePrivacy", ({ isPublic }: { isPublic: boolean }) => {
+      if (!currentRoom) return;
+      const room = rooms.get(currentRoom);
+      if (!room) return;
+      if (room.hostId !== socket.id) return;
+      if (room.status !== "waiting") return;
+      room.isPublic = !!isPublic;
+      emitRoom();
+    });
+
     // Public room: allow start anyway with minimum players and no bots
     socket.on("room:startAnyway", () => {
       if (!currentRoom) return;

@@ -12,6 +12,8 @@ export function LobbyPanel({
   roomCode,
   players,
   isHost,
+  isPublic,
+  onTogglePrivacy,
   onStartWithBots,
   onStartAnyway,
   canStartAnyway,
@@ -20,6 +22,8 @@ export function LobbyPanel({
   roomCode: string;
   players: LobbyPlayer[];
   isHost: boolean;
+  isPublic: boolean;
+  onTogglePrivacy: (value: boolean) => void;
   onStartWithBots: () => void;
   onStartAnyway: () => void;
   canStartAnyway: boolean;
@@ -31,9 +35,21 @@ export function LobbyPanel({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold">Waiting Room</h2>
-            <p className="text-sm text-muted-foreground">Room code: <span className="font-mono tracking-wider">{roomCode}</span></p>
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 border ${isPublic ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                {isPublic ? 'Public' : 'Private'}
+              </span>
+              <span>Room code: <span className="font-mono tracking-wider">{roomCode}</span></span>
+            </p>
           </div>
-          <div className="text-sm text-muted-foreground">{players.length}/5 players</div>
+          <div className="flex items-center gap-2">
+            {isHost && (
+              <button onClick={() => onTogglePrivacy(!isPublic)} className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium">
+                Make {isPublic ? 'Private' : 'Public'}
+              </button>
+            )}
+            <div className="text-sm text-muted-foreground">{players.length}/5 players</div>
+          </div>
         </div>
 
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">

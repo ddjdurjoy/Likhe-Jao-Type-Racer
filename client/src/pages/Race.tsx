@@ -42,6 +42,7 @@ export default function Race() {
   const [lobbyPlayers, setLobbyPlayers] = useState<any[]>([]);
   const lobbyPlayersRef = useRef<any[]>([]);
   const [hostId, setHostId] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState<boolean>(true);
   const lobbyEnterAtRef = useRef<number>(Date.now());
 
   const [showResults, setShowResults] = useState(false);
@@ -92,7 +93,7 @@ export default function Race() {
     if (code) {
       socket.emit("room:join", { code, name });
     } else {
-      socket.emit("room:create", { name });
+      socket.emit("room:create", { name, isPublic });
     }
 
     socket.on("room:created", (state: any) => {
@@ -114,6 +115,7 @@ export default function Race() {
       setLobbyPlayers(list);
       lobbyPlayersRef.current = list;
       setHostId(state.hostId);
+      setIsPublic(!!state.isPublic);
       setRoomCode(state.code);
       if (state.players.length >= state.max && state.status === 'countdown') {
         setRaceState('countdown');
@@ -285,6 +287,10 @@ export default function Race() {
 
   const startWithBots = useCallback(() => {
     socket.emit("room:startWithBots");
+  }, [socket]);
+
+  const togglePrivacy = useCallback((value: boolean) => {
+    socket.emit("room:updatePrivacy", { isPublic: value });
   }, [socket]);
 
   const startAnyway = useCallback(() => {
