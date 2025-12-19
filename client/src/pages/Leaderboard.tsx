@@ -57,7 +57,7 @@ export default function Leaderboard() {
       </div>
       <div className="absolute inset-0 bg-background/60 pointer-events-none z-0" aria-hidden />
 
-      <main className="relative z-10 flex-1 p-6">
+      <main className="relative z-10 flex-1 p-4 sm:p-6">
         <div className="max-w-3xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-3 w-full">

@@ -36,7 +36,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center justify-between p-4 sm:px-6">
+      <div className="flex items-center justify-between gap-2 p-3 sm:p-4 sm:px-6">
         <div className="flex items-center gap-4">
           <HeaderLogo size={34} />
           <nav className="hidden md:flex items-center gap-2 text-sm">
@@ -53,10 +53,12 @@ export function AppHeader() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
           <LanguageToggle />
-          <SoundControls />
-          <WeatherToggle />
+          <div className="hidden sm:flex items-center gap-1 sm:gap-2">
+            <SoundControls />
+            <WeatherToggle />
+          </div>
           <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="Settings">
             <Settings className="w-5 h-5" />
@@ -81,7 +83,7 @@ export function AppHeader() {
         </div>
       </div>
       <Dialog open={showAuth} onOpenChange={setShowAuth}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] max-w-md">
           <DialogHeader>
             <DialogTitle>Sign in / Sign up</DialogTitle>
           </DialogHeader>
@@ -90,7 +92,7 @@ export function AppHeader() {
       </Dialog>
 
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[95vw] max-w-md">
           <DialogHeader>
             <DialogTitle>Settings</DialogTitle>
           </DialogHeader>

@@ -16,7 +16,7 @@ export default function PlayerPage() {
 
   if (!me.data) {
     return (
-      <div className="p-6 max-w-xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-xl mx-auto">
         <Card>
           <CardHeader>
             <CardTitle>Player</CardTitle>
@@ -30,7 +30,7 @@ export default function PlayerPage() {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-xl mx-auto">
       <Card>
         <CardHeader>
           <CardTitle>Player: {me.data.username}</CardTitle>

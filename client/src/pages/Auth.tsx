@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -145,30 +146,20 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
                   setPassword(e.target.value);
                   if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
                 }}
-                className="pr-10"
+                className="pr-12"
               />
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94" />
-                    <path d="M1 1l22 22" />
-                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.77 21.77 0 0 1-4.87 6.2" />
-                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                  </svg>
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 )}
-              </Button>
+              </button>
             </div>
             {fieldErrors.password && (
               <p className="text-xs text-destructive">{fieldErrors.password}</p>

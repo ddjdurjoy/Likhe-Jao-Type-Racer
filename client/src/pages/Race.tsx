@@ -361,7 +361,7 @@ export default function Race() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border-b border-border bg-card/50">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 border-b border-border bg-card/50">
         <Button
           variant="ghost"
           size="sm"
@@ -379,7 +379,7 @@ export default function Race() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
           <Flag className="w-4 h-4" />
           <span>{currentWordIndex}/{words.length}</span>
         </div>
