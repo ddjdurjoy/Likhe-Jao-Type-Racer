@@ -4,19 +4,15 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   safelist: [
-    // Keep common dynamic utility families and breakpoints
-    { pattern: /^(sm:|md:|lg:|xl:|2xl:).*/ },
-    { pattern: /^(bg|text|border|ring|from|to|via|fill|stroke)-.*/ },
-    { pattern: /^(grid|grid-cols|col|row|gap|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr)-.*/ },
-    { pattern: /^(w|min-w|max-w|h|min-h|max-h)-.*/ },
-    { pattern: /^animate-.*/ },
-    { pattern: /^font-.*/ },
-    // Arbitrary values like text-[96px], w-[12px]
-    { pattern: /^.*\[.*\].*$/ },
-    // Specific fractions seen in Track/Countdown
-    'h-1/3', 'h-2/3', 'text-[96px]', 'sm:text-[150px]', 'md:text-[200px]',
-    // Supports variant with arbitrary selector used in headers
-    { pattern: /^supports-\[.*\]:.*$/ }
+    // Keep only explicit classes we know are created dynamically or as arbitrary values
+    // Countdown/font sizes
+    'text-[96px]', 'sm:text-[150px]', 'md:text-[200px]',
+    // Track layout
+    'h-1/3', 'h-2/3', 'w-px', 'bg-track', 'bg-track-finish',
+    // Gradients used on track
+    'bg-gradient-to-t', 'from-black/10', 'to-transparent',
+    // Card/border colors that may be composed
+    'bg-card', 'border-card-border', 'text-muted-foreground'
   ],
   theme: {
     extend: {

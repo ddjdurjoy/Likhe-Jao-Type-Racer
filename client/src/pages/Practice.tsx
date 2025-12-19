@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGameStore } from "@/lib/stores/gameStore";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
@@ -52,6 +52,9 @@ export default function Practice() {
     bestWpm: 0,
   });
 
+  // Use a ref bridge for onComplete to avoid referencing hooks before initialization during render
+  const onCompleteRef = useRef<(stats: { wpm: number }) => void>(() => {});
+
   const generateWords = useCallback(() => {
     let newWords: string[];
 
@@ -79,6 +82,7 @@ export default function Practice() {
     generateWords();
   }, [generateWords]);
 
+
   const handleComplete = useCallback(
     (stats: { wpm: number }) => {
       setSessionStats((prev) => ({
@@ -87,9 +91,10 @@ export default function Practice() {
         races: prev.races + 1,
         bestWpm: Math.max(prev.bestWpm, stats.wpm),
       }));
-      generateWords();
+      // Defer next-round preparation via ref to avoid ordering issues
+      onCompleteRef.current(stats);
     },
-    [words.length, generateWords]
+    [words.length]
   );
 
   const {
@@ -101,15 +106,30 @@ export default function Practice() {
     handleKeyDown,
     handleChange,
     reset,
+    focusInput,
   } = useTypingEngine({
     words,
     onRaceComplete: handleComplete,
     enabled: true,
   });
 
+  // Now that reset/focusInput are initialized, wire the deferred onComplete behavior
+  useEffect(() => {
+    onCompleteRef.current = () => {
+      setTimeout(() => {
+        reset();
+        generateWords();
+        focusInput();
+      }, 0);
+    };
+  }, [reset, generateWords, focusInput]);
+
   const handleReset = () => {
+    // Reset engine state and regenerate a fresh words list
     reset();
     generateWords();
+    // Ensure new round starts focused at the beginning
+    setTimeout(() => focusInput(), 0);
   };
 
   const handleBack = () => {
