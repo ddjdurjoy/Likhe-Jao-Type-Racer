@@ -11,6 +11,7 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string; email?: string }>({});
   const [email, setEmail] = useState("");
 
   const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
@@ -19,8 +20,60 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     if (me.data) onAuthed?.();
   }, [me.data, onAuthed]);
 
+  const clearErrors = () => {
+    setFormError(null);
+    setFieldErrors({});
+  };
+
+  const validate = (): boolean => {
+    const next: { username?: string; password?: string; email?: string } = {};
+    const normalizedUsername = username.trim();
+    if (normalizedUsername.length < 3) next.username = "Username must be at least 3 characters";
+    if (/\s/.test(normalizedUsername)) next.username = "Username cannot contain spaces";
+    if (password.length < 6) next.password = "Password must be at least 6 characters";
+    if (mode === "signup" && email.trim().length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      next.email = "Enter a valid email";
+    }
+    setFieldErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const applyServerError = (err: any) => {
+    const msg = String(err?.message || err || "");
+    // apiRequest throws: "<status>: <body>"
+    const idx = msg.indexOf(": ");
+    const body = idx >= 0 ? msg.slice(idx + 2) : msg;
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed?.error) {
+        // sometimes error is a JSON-stringified array of zod issues
+        if (typeof parsed.error === "string") {
+          try {
+            const issues = JSON.parse(parsed.error);
+            if (Array.isArray(issues)) {
+              const next: any = {};
+              for (const issue of issues) {
+                const path0 = issue?.path?.[0];
+                if (path0) next[path0] = issue.message;
+              }
+              if (Object.keys(next).length) {
+                setFieldErrors((prev) => ({ ...prev, ...next }));
+                return;
+              }
+            }
+          } catch {}
+        }
+        setFormError(typeof parsed.error === "string" ? parsed.error : JSON.stringify(parsed.error));
+        return;
+      }
+    } catch {}
+    setFormError(msg);
+  };
+
   const signin = useMutation({
-    onMutate: () => setFormError(null),
+    onMutate: () => {
+      clearErrors();
+    },
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/signin", { username, password });
       return res.json();
@@ -28,12 +81,14 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
-    onError: (err: any) => setFormError(String(err?.message || err)),
+    onError: (err: any) => applyServerError(err),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
   });
 
   const signup = useMutation({
-    onMutate: () => setFormError(null),
+    onMutate: () => {
+      clearErrors();
+    },
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/signup", { username, password, email });
       return res.json();
@@ -41,7 +96,7 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
-    onError: (err: any) => setFormError(String(err?.message || err)),
+    onError: (err: any) => applyServerError(err),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
   });
 
@@ -67,31 +122,82 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
           <CardTitle>{mode === "signin" ? "Sign in" : "Sign up"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <div className="flex gap-2">
+          <div className="space-y-1">
             <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (fieldErrors.username) setFieldErrors((p) => ({ ...p, username: undefined }));
+              }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowPassword((v) => !v)}
-              className="shrink-0"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </Button>
+            {fieldErrors.username && (
+              <p className="text-xs text-destructive">{fieldErrors.username}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
+                }}
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94" />
+                    <path d="M1 1l22 22" />
+                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.77 21.77 0 0 1-4.87 6.2" />
+                    <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </Button>
+            </div>
+            {fieldErrors.password && (
+              <p className="text-xs text-destructive">{fieldErrors.password}</p>
+            )}
           </div>
           {mode === "signup" && (
-            <Input placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <div className="space-y-1">
+              <Input
+                placeholder="Email (optional)"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+                }}
+              />
+              {fieldErrors.email && (
+                <p className="text-xs text-destructive">{fieldErrors.email}</p>
+              )}
+            </div>
           )}
 
           <Button
             type="button"
             className="w-full"
-            onClick={() => (mode === "signin" ? signin.mutate() : signup.mutate())}
+            onClick={() => {
+              clearErrors();
+              if (!validate()) return;
+              mode === "signin" ? signin.mutate() : signup.mutate();
+            }}
             disabled={signin.isPending || signup.isPending}
           >
             {mode === "signin" ? "Sign in" : "Create account"}

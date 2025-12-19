@@ -28,7 +28,10 @@ export function registerAuthRoutes(app: Express) {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
-    const { username, password } = parsed.data;
+    const rawUsername = parsed.data.username;
+    const username = rawUsername.trim();
+    if (/\s/.test(username)) return res.status(400).json({ error: "Username cannot contain spaces" });
+    const { password } = parsed.data;
     const email = parsed.data.email?.trim() || undefined;
 
     const existing = await storage.getUserByUsername(username);
