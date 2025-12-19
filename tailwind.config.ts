@@ -3,6 +3,19 @@ import type { Config } from "tailwindcss";
 export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
+  safelist: [
+    // Keep common dynamic utility families and breakpoints
+    { pattern: /^(sm:|md:|lg:|xl:|2xl:).*/ },
+    { pattern: /^(bg|text|border|ring|from|to|via|fill|stroke)-.*/ },
+    { pattern: /^(grid|grid-cols|col|row|gap|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr)-.*/ },
+    { pattern: /^(w|min-w|max-w|h|min-h|max-h)-.*/ },
+    { pattern: /^animate-.*/ },
+    { pattern: /^font-.*/ },
+    // Arbitrary values like text-[96px], w-[12px]
+    { pattern: /^.*\[.*\].*$/ },
+    // Specific fractions seen in Track/Countdown
+    'h-1/3', 'h-2/3', 'text-[96px]', 'sm:text-[150px]', 'md:text-[200px]'
+  ],
   theme: {
     extend: {
       borderRadius: {
