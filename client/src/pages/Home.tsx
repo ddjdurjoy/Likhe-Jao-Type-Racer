@@ -169,7 +169,7 @@ export default function Home() {
           <div className="w-full max-w-2xl p-6 bg-transparent border border-card-border rounded-lg">
             <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
               <Users className="w-4 h-4" />
-              {language === "bn" ? "আপনার পরিসংখ্যান" : "Your Stats"}
+              {language === "bn" ? `${username || "আপনি"} এর পরিসংখ্যান` : `Stats of ${username || "Guest"}` }
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div>

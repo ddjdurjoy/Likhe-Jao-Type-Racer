@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { getSocket } from "@/lib/socket";
+import { LobbyPanel } from "@/components/game/LobbyPanel";
+import { Countdown } from "@/components/game/Countdown";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useGameStore } from "@/lib/stores/gameStore";
@@ -11,7 +14,6 @@ import { RaceTrack } from "@/components/game/RaceTrack";
 import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 import { TypingInput } from "@/components/game/TypingInput";
 import { StatsDisplay, RaceResults } from "@/components/game/StatsDisplay";
-import { Countdown } from "@/components/game/Countdown";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Flag } from "lucide-react";
 import type { TypingStats, InsertRaceResult } from "@shared/schema";
@@ -24,6 +26,7 @@ export default function Race() {
     raceState,
     setRaceState,
     players,
+    setPlayers,
     updatePlayer,
     words,
     language,
@@ -35,11 +38,25 @@ export default function Race() {
     volume,
   } = useGameStore();
 
+  const [roomCode, setRoomCode] = useState<string>("");
+  const [lobbyPlayers, setLobbyPlayers] = useState<any[]>([]);
+  const lobbyPlayersRef = useRef<any[]>([]);
+  const [hostId, setHostId] = useState<string | null>(null);
+
   const [showResults, setShowResults] = useState(false);
   const [finalStats, setFinalStats] = useState<TypingStats | null>(null);
   const [raceTime, setRaceTime] = useState(0);
   const [playerPosition, setPlayerPosition] = useState(1);
   const startTimeRef = useRef<number>(0);
+
+  // Define startRace early so effects can reference it safely
+  const startRace = useCallback(() => {
+    soundManager.playRaceStart();
+    setRaceState("racing");
+    startTimeRef.current = Date.now();
+    // Focus input after state change; avoid TDZ by not depending on inputRef in deps
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [setRaceState]);
 
   const saveRaceResultMutation = useMutation({
     mutationFn: async (raceResult: InsertRaceResult) => {
@@ -61,11 +78,85 @@ export default function Race() {
         language,
         difficulty,
         wordCount: WORD_COUNT,
-        aiOpponents: 3,
+        aiOpponents: 0,
       },
       raceWords
     );
-  }, [language, difficulty, initRace]);
+
+    const socket = getSocket();
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const name = useGameStore.getState().username || "Player";
+
+    if (code) {
+      socket.emit("room:join", { code, name });
+    } else {
+      socket.emit("room:create", { name });
+    }
+
+    socket.on("room:created", (state: any) => {
+      setRoomCode(state.code);
+      setHostId(state.hostId);
+      setLobbyPlayers(state.players);
+      setRaceState("waiting");
+    });
+
+    socket.on("room:joined", (state: any) => {
+      setRoomCode(state.code);
+      setHostId(state.hostId);
+      setLobbyPlayers(state.players);
+      setRaceState("waiting");
+    });
+
+    socket.on("room:update", (state: any) => {
+      const list = state.players.map((p: any) => ({...p, isHost: p.id === state.hostId}));
+      setLobbyPlayers(list);
+      lobbyPlayersRef.current = list;
+      setHostId(state.hostId);
+      setRoomCode(state.code);
+      if (state.players.length >= state.max && state.status === 'countdown') {
+        setRaceState('countdown');
+      }
+    });
+
+    socket.on("race:countdown", ({ from }: any) => {
+      setRaceState('countdown');
+      try { useGameStore.getState().setCountdown(from ?? 3); } catch {}
+    });
+
+    socket.on("race:start", () => {
+      // Build AI players from latest lobby state (bots only)
+      const list = lobbyPlayersRef.current || [];
+      const bots = list.filter((p: any) => String(p.id).startsWith("bot-")).map((p: any, i: number) => ({
+        id: p.id,
+        name: p.name || `Bot ${i + 1}`,
+        carId: (i + 2) % 5,
+        progress: 0,
+        wpm: 0,
+        accuracy: 95 + Math.random() * 5,
+        finished: false,
+        position: 0,
+        isAI: true,
+        aiDifficulty: (["rookie", "steady", "speedy"] as const)[i % 3],
+      }));
+      // Preserve the local player entry
+      const current = useGameStore.getState().players;
+      const me = current.find((p) => p.id === "player");
+      if (me) setPlayers([me, ...bots]);
+      else setPlayers(bots);
+      startRace();
+    });
+
+    socket.on("room:chat", () => {});
+
+    return () => {
+      socket.off("room:created");
+      socket.off("room:joined");
+      socket.off("room:update");
+      socket.off("race:countdown");
+      socket.off("race:start");
+    };
+  }, [language, difficulty, initRace, setRaceState, startRace]);
 
   const handleWordComplete = useCallback(
     (wordIndex: number) => {
@@ -152,12 +243,6 @@ export default function Race() {
     }
   }, [currentWordIndex, stats.wpm, stats.accuracy, words.length, raceState, updatePlayer]);
 
-  const handleCountdownComplete = useCallback(() => {
-    setRaceState("racing");
-    startTimeRef.current = Date.now();
-    inputRef.current?.focus();
-  }, [setRaceState, inputRef]);
-
   const handlePlayAgain = useCallback(() => {
     resetRace();
     resetTyping();
@@ -190,6 +275,17 @@ export default function Race() {
   const currentPosition =
     players.filter((p) => p.progress > (player?.progress || 0)).length + 1;
 
+  // Lobby logic handled by server via socket events.
+  // Auto-fill with bots only occurs when host clicks "Start now with bots".
+
+
+  const socket = useMemo(() => getSocket(), []);
+  const isHost = useMemo(() => hostId === (socket as any).id, [hostId, socket]);
+
+  const startWithBots = useCallback(() => {
+    socket.emit("room:startWithBots");
+  }, [socket]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="flex items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 pt-safe border-b border-border bg-card/50 sticky top-0">
@@ -218,10 +314,22 @@ export default function Race() {
 
       <main className="flex-1 flex flex-col min-h-0 p-3 sm:p-4 gap-3 sm:gap-4">
         <div className="flex-1 min-h-0">
-          <div className="h-full relative">
-            <AnimatedBackground wpm={stats.wpm} showCelestial />
-            <RaceTrack />
-          </div>
+         <div className="h-full relative">
+           <AnimatedBackground wpm={stats.wpm} showCelestial />
+           <RaceTrack />
+           {raceState === 'waiting' && (
+             <LobbyPanel
+               roomCode={roomCode}
+               players={lobbyPlayers}
+               isHost={isHost}
+               onStartWithBots={startWithBots}
+               waitingCount={Math.max(0, 5 - lobbyPlayers.length)}
+             />
+           )}
+           {raceState === 'countdown' && (
+             <Countdown onComplete={startRace} />
+           )}
+         </div>
         </div>
 
         <div className="space-y-4">
@@ -243,9 +351,6 @@ export default function Race() {
         </div>
       </main>
 
-      {raceState === "countdown" && (
-        <Countdown onComplete={handleCountdownComplete} />
-      )}
 
       {showResults && finalStats && (
         <RaceResults

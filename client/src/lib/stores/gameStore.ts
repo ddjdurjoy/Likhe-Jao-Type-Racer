@@ -181,9 +181,9 @@ export const useGameStore = create<GameStore>()(
         set({
           ...defaultState,
           words,
-          players: [player, ...aiPlayers],
-          raceState: "countdown",
-          countdown: 3,
+          players: [player], // defer AI until lobby timeout/fill
+          raceState: "waiting",
+          countdown: 0,
         });
       },
     }),

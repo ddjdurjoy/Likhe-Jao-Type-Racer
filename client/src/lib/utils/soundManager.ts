@@ -256,18 +256,25 @@ class SoundManager {
 
   playVictory(spatial?: SpatialOptions): void {
     if (!this.enabled) return;
-
-    // Simple fanfare using triads: C major -> F major -> G major -> C
-    const chords: number[][] = [
-      [523.25, 659.25, 783.99], // C-E-G
-      [349.23, 440.00, 587.33], // F-A-D
-      [392.00, 493.88, 659.25], // G-B-E
-      [523.25, 659.25, 783.99], // C-E-G
+    // Richer, warmer fanfare with gentle detune and transient
+    const base = [523.25, 659.25, 783.99]; // C E G
+    const seq: number[][] = [
+      base,
+      [587.33, 739.99, 880.0], // D F# A
+      [659.25, 830.61, 987.77], // E G# B
+      base,
     ];
-    chords.forEach((triad, i) => {
+    // Add soft transient
+    this.playTone(1200, 0.05, 'triangle', 0.5, { fadeOut: 0.03, spatial });
+    seq.forEach((triad, i) => {
       setTimeout(() => {
-        triad.forEach((f, j) => this.playTone(f, 0.28, j === 0 ? "square" : "sine", 0.38, { spatial }));
-      }, i * 260);
+        triad.forEach((f, j) => {
+          const detune = (Math.random() - 0.5) * 6; // +/- 3 Hz
+          this.playTone(f + detune, 0.22, j === 0 ? 'triangle' : 'sine', 0.42, { fadeIn: 0.005, fadeOut: 0.06, spatial });
+        });
+        // subtle arpeggio on top
+        setTimeout(() => this.playTone(triad[2] * 2, 0.12, 'sine', 0.28, { fadeOut: 0.05, spatial }), 80);
+      }, i * 240);
     });
   }
 
