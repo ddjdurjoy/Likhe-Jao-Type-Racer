@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api"
+      "destination": "https://likhe-jao-type-racer.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/api"
+      "destination": "/index.html"
     }
   ]
 }
