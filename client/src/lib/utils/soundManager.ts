@@ -182,7 +182,42 @@ class SoundManager {
 
   // Basic SFX wrappers
   playKeypress(spatial?: SpatialOptions): void {
-    this.playTone(2400, 0.03, "sine", 0.35, { fadeOut: 0.02, spatial });
+    // Slight pitch variation for more natural feel
+    const base = 1800;
+    const jitter = (Math.random() - 0.5) * 200; // +/- 100 Hz
+    this.playTone(base + jitter, 0.025, "triangle", 0.32, { fadeOut: 0.02, spatial });
+  }
+
+  playBackspace(spatial?: SpatialOptions): void {
+    // Soft, lower-pitched tap with tiny downward sweep
+    const ctx = this.getContext();
+    if (!this.enabled) return;
+    try {
+      const osc = ctx.createOscillator();
+      const g = this.acquireGain();
+      const endNode = this.applySpatial(g, spatial);
+      endNode.connect(this.masterGain!);
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(240, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.05);
+
+      const v = 0.28 * this.masterVolume;
+      g.gain.setValueAtTime(v, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+
+      osc.connect(g);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.06);
+      osc.onended = () => {
+        try { osc.disconnect(); } catch {}
+        this.releaseGain(g);
+        if (endNode instanceof StereoPannerNode) this.releaseStereo(endNode as StereoPannerNode);
+        if (endNode instanceof PannerNode) this.releasePanner3D(endNode as PannerNode);
+      };
+    } catch (e) {
+      console.warn("Backspace sound failed", e);
+    }
   }
 
   playError(spatial?: SpatialOptions): void {

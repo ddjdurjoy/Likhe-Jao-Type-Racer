@@ -5,6 +5,7 @@ import { soundManager } from "@/lib/utils/soundManager";
 export type UseSoundApi = {
   play: {
     keypress: () => void;
+    backspace: () => void;
     error: () => void;
     wordComplete: () => void;
     countdownBeep: () => void;
@@ -44,6 +45,7 @@ export function useSound(): UseSoundApi {
   const api = useMemo<UseSoundApi>(() => ({
     play: {
       keypress: () => soundManager.playKeypress(),
+      backspace: () => soundManager.playBackspace(),
       error: () => soundManager.playError(),
       wordComplete: () => soundManager.playWordComplete(),
       countdownBeep: () => soundManager.playCountdownBeep(),

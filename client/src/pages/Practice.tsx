@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGameStore } from "@/lib/stores/gameStore";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
-import { getRandomWords, getRandomQuote } from "@/lib/data/words";
+import { getRandomWords, getRandomQuote, getRandomLyrics } from "@/lib/data/words";
 import { TypingInput } from "@/components/game/TypingInput";
 import { StatsDisplay } from "@/components/game/StatsDisplay";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,12 @@ import { cn } from "@/lib/utils";
 import { ArrowLeft, RefreshCw, BookOpen, MessageSquare, Code, Zap } from "lucide-react";
 import type { Difficulty } from "@shared/schema";
 
-type PracticeCategory = "common" | "quotes" | "code" | "random";
+type PracticeCategory = "common" | "quotes" | "lyrics" | "code" | "random";
 
 const categories = [
   { id: "common" as PracticeCategory, name: "Common Words", nameBn: "সাধারণ শব্দ", icon: BookOpen },
   { id: "quotes" as PracticeCategory, name: "Quotes", nameBn: "উক্তি", icon: MessageSquare },
+  { id: "lyrics" as PracticeCategory, name: "Lyrics", nameBn: "গানের লিরিক্স", icon: MessageSquare },
   { id: "code" as PracticeCategory, name: "Code Snippets", nameBn: "কোড", icon: Code },
   { id: "random" as PracticeCategory, name: "Random Mix", nameBn: "মিশ্র", icon: Zap },
 ];
@@ -61,6 +62,9 @@ export default function Practice() {
     switch (category) {
       case "quotes":
         newWords = getRandomQuote(language);
+        break;
+      case "lyrics":
+        newWords = getRandomLyrics(language);
         break;
       case "code":
         const snippet = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];

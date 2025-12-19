@@ -20,7 +20,7 @@ export function RaceTrack() {
 
   return (
     <div
-      className="relative w-full h-full rounded-lg overflow-hidden"
+      className="relative z-10 w-full h-full rounded-lg overflow-hidden"
       data-testid="race-track"
     >
       {/* Sky window (top area shows AnimatedBackground) */}

@@ -74,6 +74,7 @@ export function useTypingEngine({
 
       // Handle backspace
       if (e.key === "Backspace") {
+        soundManager.playBackspace();
         bijoyProcessor.current.reset();
         // Allow default backspace behavior for both Bengali and English
         return;

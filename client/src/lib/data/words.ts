@@ -120,3 +120,36 @@ export function getRandomQuote(language: "en" | "bn"): string[] {
   const quote = quotes[Math.floor(Math.random() * quotes.length)];
   return quote.split(" ");
 }
+
+export const englishLyrics = [
+  "Cause baby you are a firework come on show em what youre worth",
+  "Just a small town girl living in a lonely world",
+  "We will we will rock you",
+  "Is this the real life is this just fantasy",
+  "I got a feeling that tonight is gonna be a good night",
+  "Hello from the other side I must have called a thousand times",
+  "Shake it off I shake it off",
+  "I am gonna take my horse to the old town road",
+  "Let it be let it be whisper words of wisdom let it be",
+  "I am on the highway to hell",
+];
+
+export const banglaLyrics = [
+  "আমার সোনার বাংলা আমি তোমায় ভালোবাসি",
+  "আমার ভাইয়ের রক্তে রাঙানো, একুশে ফেব্রুয়ারি আমি কি ভুলিতে পারি।। ছেলে হারা শত মায়ের অশ্রু গড়ায়ে ফেব্রুয়ারি।।",
+  "মঙ্গল দ্বীপ জ্বেলে, অন্ধকারে দুচোখ আলোয় ভরো প্রভু। তবু যারা বিশ্বাস করে না তুমি আছ, তাদের মার্জনা করো প্রভু।",
+  "তুমি ছেড়োনা হাত পথে যদি আঁধার আসেই নেমে, গ্রহণ যত করো আমায় ততোই বাঁধো প্রেমে।",
+  "পাশেই আমার থাকো, জীবন টাকে শান্তি দিয়ে সবুজ করে রাখো",
+  "তুমি রবে নীরবে হৃদয়ে মম",
+  "বর্ণে গন্ধে ছন্দে গীতিতে হৃদয়ে দিয়েছো দোলা, রঙেতে রাঙিয়া রাঙাইলে মোরে, একি তব হরি খেলা। তুমি যে ফাগুন,রঙেরও আগুন তুমি যে রসেরও ধারা, তোমার মাধুরী তোমার মদিরা করে মোরে দিশাহারা",
+  "ও আমার দেশের মাটি, তোমার পরে ঠেকাই মাথা। তোমাতে বিশ্বময়ীর, তোমাতে বিশ্বমায়ের আঁচল পাতা॥",
+  "আমি তোমার ছায়া, তোমার আকাশ নীলে আমি স্নিগ্ধ মেঘের মায়া। তোমায় কাছে পেয়ে, পৃথিবী তে কে আর সুখী বলো আমার চেয়ে ?",
+  "পুরানো সেই দিনের কথা ভুলবি কিরে হায়, ও সেই চোখের দেখা প্রাণের কথা সে কি ভোলা যায়।",
+  "আমার স্বপ্ন তুমি ওগো চিরদিনের সাথী তুমি সূর্য ওঠা ভোর আমার আর তারায় ভরা রাতি",
+];
+
+export function getRandomLyrics(language: "en" | "bn"): string[] {
+  const lyrics = language === "en" ? englishLyrics : banglaLyrics;
+  const line = lyrics[Math.floor(Math.random() * lyrics.length)];
+  return line.split(" ");
+}
