@@ -103,15 +103,22 @@ export default function Race() {
     socket.on("room:created", (state: any) => {
       setRoomCode(state.code);
       setHostId(state.hostId);
-      setLobbyPlayers(state.players);
+      setIsPublic(!!state.isPublic);
+      setLobbyPlayers(state.players.map((p: any) => ({ ...p, isHost: p.id === state.hostId })));
+      lobbyPlayersRef.current = state.players;
       setRaceState("waiting");
+      lobbyEnterAtRef.current = Date.now();
     });
 
     socket.on("room:joined", (state: any) => {
       setRoomCode(state.code);
       setHostId(state.hostId);
-      setLobbyPlayers(state.players);
+      setIsPublic(!!state.isPublic);
+      const list = state.players.map((p: any) => ({ ...p, isHost: p.id === state.hostId }));
+      setLobbyPlayers(list);
+      lobbyPlayersRef.current = list;
       setRaceState("waiting");
+      lobbyEnterAtRef.current = Date.now();
     });
 
     socket.on("room:update", (state: any) => {
@@ -337,6 +344,8 @@ export default function Race() {
                roomCode={roomCode}
                players={lobbyPlayers}
                isHost={isHost}
+               isPublic={isPublic}
+               onTogglePrivacy={togglePrivacy}
                onStartWithBots={startWithBots}
                onStartAnyway={startAnyway}
                canStartAnyway={(() => {
