@@ -371,21 +371,6 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
         </>
       )}
 
-      {/* Distant silhouettes for depth */}
-      <div className="absolute bottom-12 left-0 right-0 h-16 opacity-30">
-        {!prefersReduced ? (
-          <motion.div
-            className="absolute inset-y-0 w-[200%]"
-            animate={{ x: ["0%", "-100%"] }}
-            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="w-full h-full bg-[linear-gradient(to_top,rgba(0,0,0,0.2),transparent),repeating-linear-gradient(90deg,rgba(0,0,0,0.5)_0,rgba(0,0,0,0.5)_6px,transparent_6px,transparent_18px)]" />
-          </motion.div>
-        ) : (
-          <div className="absolute inset-y-0 w-full bg-[linear-gradient(to_top,rgba(0,0,0,0.2),transparent),repeating-linear-gradient(90deg,rgba(0,0,0,0.5)_0,rgba(0,0,0,0.5)_6px,transparent_6px,transparent_18px)]" />
-        )}
-      </div>
-
       {/* Starfield canvas for dark */}
       {theme === "dark" && <canvas ref={starCanvasRef} className="absolute inset-0 w-full h-full" />}
       {weatherOn && <canvas ref={weatherCanvasRef} className="absolute inset-0 w-full h-full" />}
