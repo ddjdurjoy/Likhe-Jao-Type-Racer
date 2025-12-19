@@ -9,6 +9,8 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
 
   const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
@@ -18,6 +20,7 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   }, [me.data, onAuthed]);
 
   const signin = useMutation({
+    onMutate: () => setFormError(null),
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/signin", { username, password });
       return res.json();
@@ -25,9 +28,12 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
+    onError: (err: any) => setFormError(String(err?.message || err)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
   });
 
   const signup = useMutation({
+    onMutate: () => setFormError(null),
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/auth/signup", { username, password, email });
       return res.json();
@@ -35,6 +41,8 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
+    onError: (err: any) => setFormError(String(err?.message || err)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
   });
 
   if (me.data) {
@@ -60,12 +68,28 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <Input placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div className="flex gap-2">
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPassword((v) => !v)}
+              className="shrink-0"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </Button>
+          </div>
           {mode === "signup" && (
             <Input placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
           )}
 
           <Button
+            type="button"
             className="w-full"
             onClick={() => (mode === "signin" ? signin.mutate() : signup.mutate())}
             disabled={signin.isPending || signup.isPending}
@@ -73,15 +97,21 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
             {mode === "signin" ? "Sign in" : "Create account"}
           </Button>
 
-          <Button variant="ghost" className="w-full" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           >
             {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
           </Button>
 
-          {(signin.error || signup.error) && (
-            <p className="text-sm text-destructive">
-              {String((signin.error as any)?.message || (signup.error as any)?.message)}
-            </p>
+          {(signin.isPending || signup.isPending) && (
+            <p className="text-sm text-muted-foreground">Working...</p>
+          )}
+
+          {formError && (
+            <p className="text-sm text-destructive whitespace-pre-wrap">{formError}</p>
           )}
         </CardContent>
       </Card>
