@@ -6,14 +6,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import React, { useRef } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import { soundManager } from "@/lib/utils/soundManager";
 
 export function SoundControls() {
   const { soundEnabled, volume, setSoundEnabled, setVolume } = useGameStore();
-  // Initialize and sync audio on open/interactions
-  // Lazy import hook to avoid cyclic load issues in SSR
+  const previewTimeout = useRef<number | null>(null);
+  const lastPreviewAt = useRef<number>(0);
+  // Initialize audio context on user interaction without calling hooks
   const onAnyInteract = () => {
-    import("@/hooks/useSound").then((m) => m.useSound().ensureUnlocked());
+    try { soundManager.resumeContext(); } catch {}
   };
 
   return (
@@ -49,7 +52,20 @@ export function SoundControls() {
               </div>
               <Slider
                 value={[volume]}
-                onValueChange={([val]) => { onAnyInteract(); setVolume(val); }}
+                onValueChange={([val]) => {
+                  onAnyInteract();
+                  setVolume(val);
+                  // Throttled preview: play a short tone to reflect new volume
+                  const now = performance.now();
+                  if (now - lastPreviewAt.current > 120) {
+                    lastPreviewAt.current = now;
+                    try { soundManager.playKeypress(); } catch {}
+                  }
+                  if (previewTimeout.current) window.clearTimeout(previewTimeout.current);
+                  previewTimeout.current = window.setTimeout(() => {
+                    try { soundManager.playWordComplete(); } catch {}
+                  }, 200);
+                }}
                 max={100}
                 step={5}
                 className="w-full"
