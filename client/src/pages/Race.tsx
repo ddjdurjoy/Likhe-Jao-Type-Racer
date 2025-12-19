@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useGameStore } from "@/lib/stores/gameStore";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
 import { useAIOpponents } from "@/hooks/useAIOpponents";
-import { getRandomWords } from "@/lib/data/words";
+import { getSeededWords } from "@/lib/data/words";
 import { soundManager } from "@/lib/utils/soundManager";
 import { apiRequest } from "@/lib/queryClient";
 import { RaceTrack } from "@/components/game/RaceTrack";
@@ -74,7 +74,8 @@ export default function Race() {
   }, [soundEnabled, volume]);
 
   useEffect(() => {
-    const raceWords = getRandomWords(language, difficulty, WORD_COUNT);
+    // Words are synchronized via server (seed+config) on race:countdown.
+    // Initialize empty waiting state for now.
     initRace(
       {
         language,
@@ -82,7 +83,7 @@ export default function Race() {
         wordCount: WORD_COUNT,
         aiOpponents: 0,
       },
-      raceWords
+      []
     );
 
     const socket = getSocket();
@@ -92,12 +93,12 @@ export default function Race() {
     const name = useGameStore.getState().username || "Player";
 
     if (code) {
-      socket.emit("room:join", { code, name });
+      socket.emit("room:join", { code, name, language, difficulty });
     } else if (mode === "private") {
-      socket.emit("room:create", { name, isPublic: false });
+      socket.emit("room:create", { name, isPublic: false, language, difficulty });
     } else {
       // Default: join public lobby
-      socket.emit("queue:joinPublic", { name });
+      socket.emit("queue:joinPublic", { name, language, difficulty });
     }
 
     socket.on("room:created", (state: any) => {
@@ -133,32 +134,71 @@ export default function Race() {
       }
     });
 
-    socket.on("race:countdown", ({ from }: any) => {
+    socket.on("race:countdown", ({ from, seed, language: lang, difficulty: diff, wordCount }: any) => {
+      // Prepare identical words across clients
+      const w = getSeededWords(lang ?? language, diff ?? difficulty, wordCount ?? WORD_COUNT, seed ?? 1);
+      useGameStore.getState().setWords(w);
+      // Recreate roster (humans + bots) consistently
+      const s = getSocket();
+      const mySocketId = (s as any).id;
+      const roster = (lobbyPlayersRef.current || []).map((p: any, i: number) => {
+        const isBot = String(p.id).startsWith("bot-");
+        const isMe = p.id === mySocketId;
+        if (isMe) {
+          return {
+            ...useGameStore.getState().players.find((x) => x.id === "player"),
+            id: "player",
+            name: p.name,
+            carId: useGameStore.getState().selectedCarId,
+            progress: 0,
+            wpm: 0,
+            accuracy: 100,
+            finished: false,
+            position: 0,
+            isAI: false,
+          };
+        }
+        if (isBot) {
+          return {
+            id: p.id,
+            name: p.name,
+            carId: (i + 2) % 5,
+            progress: 0,
+            wpm: 0,
+            accuracy: 98,
+            finished: false,
+            position: 0,
+            isAI: true,
+            aiDifficulty: "steady" as const,
+          };
+        }
+        return {
+          id: p.id,
+          name: p.name,
+          carId: (i + 2) % 5,
+          progress: 0,
+          wpm: 0,
+          accuracy: 100,
+          finished: false,
+          position: 0,
+          isAI: false,
+        };
+      });
+      useGameStore.getState().setPlayers(roster.length ? roster : useGameStore.getState().players);
+
       setRaceState('countdown');
       try { useGameStore.getState().setCountdown(from ?? 3); } catch {}
     });
 
     socket.on("race:start", () => {
-      // Build AI players from latest lobby state (bots only)
-      const list = lobbyPlayersRef.current || [];
-      const bots = list.filter((p: any) => String(p.id).startsWith("bot-")).map((p: any, i: number) => ({
-        id: p.id,
-        name: p.name || `Bot ${i + 1}`,
-        carId: (i + 2) % 5,
-        progress: 0,
-        wpm: 0,
-        accuracy: 95 + Math.random() * 5,
-        finished: false,
-        position: 0,
-        isAI: true,
-        aiDifficulty: (["rookie", "steady", "speedy"] as const)[i % 3],
-      }));
-      // Preserve the local player entry
-      const current = useGameStore.getState().players;
-      const me = current.find((p) => p.id === "player");
-      if (me) setPlayers([me, ...bots]);
-      else setPlayers(bots);
       startRace();
+    });
+
+    socket.on("race:position", ({ id, progress }: any) => {
+      const s = getSocket();
+      const mySocketId = (s as any).id;
+      const storeId = id === mySocketId ? "player" : id;
+      useGameStore.getState().updatePlayer(storeId, { progress: Math.max(0, Math.min(100, progress * 100)) });
     });
 
     socket.on("room:chat", () => {});
@@ -169,6 +209,7 @@ export default function Race() {
       socket.off("room:update");
       socket.off("race:countdown");
       socket.off("race:start");
+      socket.off("race:position");
     };
   }, [language, difficulty, initRace, setRaceState, startRace]);
 
@@ -236,12 +277,13 @@ export default function Race() {
     enabled: raceState === "racing",
   });
 
-  // Throttle store updates to avoid render-update loops
+  // Throttle store + socket updates (100ms) to sync opponents
   const lastSentRef = useRef<{ progress: number; wpm: number; accuracy: number } | null>(null);
+  const lastEmitAtRef = useRef<number>(0);
   useEffect(() => {
     if (raceState !== "racing") return;
 
-    const progress = (currentWordIndex / words.length) * 100;
+    const progress = words.length ? (currentWordIndex / words.length) : 0;
     const next = { progress, wpm: stats.wpm, accuracy: stats.accuracy };
     const prev = lastSentRef.current;
 
@@ -253,7 +295,14 @@ export default function Race() {
 
     if (changed) {
       lastSentRef.current = next;
-      updatePlayer("player", next);
+      updatePlayer("player", { ...next, progress: next.progress * 100 });
+
+      const now = performance.now();
+      if (now - lastEmitAtRef.current >= 100) {
+        lastEmitAtRef.current = now;
+        const s = getSocket();
+        s.emit("race:position", { progress: next.progress });
+      }
     }
   }, [currentWordIndex, stats.wpm, stats.accuracy, words.length, raceState, updatePlayer]);
 

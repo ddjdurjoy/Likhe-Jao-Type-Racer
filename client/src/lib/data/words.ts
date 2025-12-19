@@ -95,24 +95,44 @@ export const banglaQuotes = [
   "জয় বাংলা"
 ];
 
+function mulberry32(seed: number) {
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6D2B79F5;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function getSeededWords(
+  language: "en" | "bn",
+  difficulty: "easy" | "medium" | "hard",
+  count: number,
+  seed: number
+): string[] {
+  const wordList = language === "en" ? englishWords[difficulty] : banglaWords[difficulty];
+  const rng = mulberry32(seed);
+  const arr = [...wordList];
+  // Fisher–Yates shuffle with seeded RNG
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  const result: string[] = [];
+  for (let i = 0; i < count; i++) {
+    result.push(arr[i % arr.length]);
+  }
+  return result;
+}
+
 export function getRandomWords(
   language: "en" | "bn",
   difficulty: "easy" | "medium" | "hard",
   count: number
 ): string[] {
-  const wordList = language === "en" ? englishWords[difficulty] : banglaWords[difficulty];
-  const result: string[] = [];
-  const shuffled = [...wordList].sort(() => Math.random() - 0.5);
-  
-  for (let i = 0; i < count && i < shuffled.length; i++) {
-    result.push(shuffled[i]);
-  }
-  
-  while (result.length < count) {
-    result.push(shuffled[Math.floor(Math.random() * shuffled.length)]);
-  }
-  
-  return result;
+  const seed = (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
+  return getSeededWords(language, difficulty, count, seed);
 }
 
 export function getRandomQuote(language: "en" | "bn"): string[] {

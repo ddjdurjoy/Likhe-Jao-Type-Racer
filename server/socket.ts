@@ -15,6 +15,11 @@ interface RoomState {
   max: number;
   status: "waiting" | "countdown" | "racing" | "finished";
   isPublic?: boolean;
+  // Race setup (generated once per race start)
+  raceSeed?: number;
+  raceLanguage?: "en" | "bn";
+  raceDifficulty?: "easy" | "medium" | "hard";
+  raceWordCount?: number;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -75,7 +80,7 @@ export function setupSocket(httpServer: HTTPServer) {
       if (room) io.to(currentRoom).emit("room:update", room);
     }
 
-    socket.on("queue:joinPublic", ({ name, avatar }: { name: string; avatar?: string }) => {
+    socket.on("queue:joinPublic", ({ name, avatar, language, difficulty }: { name: string; avatar?: string; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       const lobby = getOrCreatePublicLobby();
       socket.join(lobby.code);
       currentRoom = lobby.code;
@@ -83,10 +88,13 @@ export function setupSocket(httpServer: HTTPServer) {
       const existing = lobby.players.find(p => p.id === socket.id);
       if (!existing) {
         lobby.players.push({ id: socket.id, name, avatar, ready: false });
-        // First player becomes host
+        // First player becomes host (also sets race settings)
         if (!lobby.hostId) {
           lobby.hostId = socket.id;
           (lobby as any).createdAt = Date.now();
+          lobby.raceLanguage = language ?? "en";
+          lobby.raceDifficulty = difficulty ?? "medium";
+          lobby.raceWordCount = 20;
         }
       }
 
@@ -97,8 +105,16 @@ export function setupSocket(httpServer: HTTPServer) {
       const realPlayers = lobby.players.filter(p => !String(p.id).startsWith("bot-"));
       if (lobby.status === "waiting" && realPlayers.length >= lobby.max) {
         lobby.status = "countdown";
+        // generate race seed once
+        lobby.raceSeed = lobby.raceSeed ?? ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
         emitRoom();
-        io.to(lobby.code).emit("race:countdown", { from: 3 });
+        io.to(lobby.code).emit("race:countdown", {
+          from: 3,
+          seed: lobby.raceSeed,
+          language: lobby.raceLanguage ?? "en",
+          difficulty: lobby.raceDifficulty ?? "medium",
+          wordCount: lobby.raceWordCount ?? 20,
+        });
         setTimeout(() => {
           lobby.status = "racing";
           emitRoom();
@@ -109,7 +125,7 @@ export function setupSocket(httpServer: HTTPServer) {
       }
     });
 
-    socket.on("room:create", ({ name, avatar, isPublic }: { name: string; avatar?: string; isPublic?: boolean }) => {
+    socket.on("room:create", ({ name, avatar, isPublic, language, difficulty }: { name: string; avatar?: string; isPublic?: boolean; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       let code = makeCode();
       while (rooms.has(code)) code = makeCode();
       const state: RoomState = {
@@ -119,6 +135,9 @@ export function setupSocket(httpServer: HTTPServer) {
         max: 5,
         status: "waiting",
         isPublic: !!isPublic,
+        raceLanguage: language ?? "en",
+        raceDifficulty: difficulty ?? "medium",
+        raceWordCount: 20,
       };
       rooms.set(code, state);
       socket.join(code);
@@ -127,12 +146,16 @@ export function setupSocket(httpServer: HTTPServer) {
       emitRoom();
     });
 
-    socket.on("room:join", ({ code, name, avatar }: { code: string; name: string; avatar?: string }) => {
+    socket.on("room:join", ({ code, name, avatar, language, difficulty }: { code: string; name: string; avatar?: string; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       const room = rooms.get(code);
       if (!room) return socket.emit("room:error", { message: "Room not found" });
       if (room.players.length >= room.max) return socket.emit("room:error", { message: "Room full" });
       if (room.status !== "waiting") return socket.emit("room:error", { message: "Race already started" });
       room.players.push({ id: socket.id, name, avatar, ready: false });
+      // If host not set (shouldn't happen) or first player, set race settings
+      if (!room.raceLanguage) room.raceLanguage = language ?? room.raceLanguage;
+      if (!room.raceDifficulty) room.raceDifficulty = difficulty ?? room.raceDifficulty;
+      if (!room.raceWordCount) room.raceWordCount = 20;
       socket.join(code);
       currentRoom = code;
       socket.emit("room:joined", room);
@@ -142,8 +165,15 @@ export function setupSocket(httpServer: HTTPServer) {
         const allReal = room.players.every((p) => !String(p.id).startsWith("bot-"));
         if (allReal) {
           room.status = "countdown";
+          room.raceSeed = room.raceSeed ?? ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
           emitRoom();
-          io.to(currentRoom).emit("race:countdown", { from: 3 });
+          io.to(currentRoom).emit("race:countdown", {
+            from: 3,
+            seed: room.raceSeed,
+            language: room.raceLanguage ?? "en",
+            difficulty: room.raceDifficulty ?? "medium",
+            wordCount: room.raceWordCount ?? 20,
+          });
           setTimeout(() => {
             room.status = "racing";
             emitRoom();
@@ -226,8 +256,15 @@ export function setupSocket(httpServer: HTTPServer) {
       
       if (realPlayers.length >= 2 && realPlayers.length < room.max && elapsed >= 8000) {
         room.status = "countdown";
+        room.raceSeed = room.raceSeed ?? ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
         emitRoom();
-        io.to(currentRoom).emit("race:countdown", { from: 3 });
+        io.to(currentRoom).emit("race:countdown", {
+          from: 3,
+          seed: room.raceSeed,
+          language: room.raceLanguage ?? "en",
+          difficulty: room.raceDifficulty ?? "medium",
+          wordCount: room.raceWordCount ?? 20,
+        });
         setTimeout(() => {
           room.status = "racing";
           emitRoom();
