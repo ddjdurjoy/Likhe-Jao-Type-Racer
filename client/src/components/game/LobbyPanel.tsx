@@ -39,7 +39,9 @@ export function LobbyPanel({
               <span className={`inline-flex items-center rounded-full px-2 py-0.5 border ${isPublic ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                 {isPublic ? 'Public' : 'Private'}
               </span>
-              <span>Room code: <span className="font-mono tracking-wider">{roomCode}</span></span>
+              {!isPublic && (
+                <span>Room code: <span className="font-mono tracking-wider">{roomCode}</span></span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">

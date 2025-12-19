@@ -5,6 +5,7 @@ interface PlayerInfo {
   id: string;
   name: string;
   avatar?: string;
+  carId?: number;
   ready: boolean;
 }
 
@@ -80,14 +81,14 @@ export function setupSocket(httpServer: HTTPServer) {
       if (room) io.to(currentRoom).emit("room:update", room);
     }
 
-    socket.on("queue:joinPublic", ({ name, avatar, language, difficulty }: { name: string; avatar?: string; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
+    socket.on("queue:joinPublic", ({ name, avatar, carId, language, difficulty }: { name: string; avatar?: string; carId?: number; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       const lobby = getOrCreatePublicLobby();
       socket.join(lobby.code);
       currentRoom = lobby.code;
       
       const existing = lobby.players.find(p => p.id === socket.id);
       if (!existing) {
-        lobby.players.push({ id: socket.id, name, avatar, ready: false });
+        lobby.players.push({ id: socket.id, name, avatar, carId, ready: false });
         // First player becomes host (also sets race settings)
         if (!lobby.hostId) {
           lobby.hostId = socket.id;
@@ -125,13 +126,13 @@ export function setupSocket(httpServer: HTTPServer) {
       }
     });
 
-    socket.on("room:create", ({ name, avatar, isPublic, language, difficulty }: { name: string; avatar?: string; isPublic?: boolean; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
+    socket.on("room:create", ({ name, avatar, carId, isPublic, language, difficulty }: { name: string; avatar?: string; carId?: number; isPublic?: boolean; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       let code = makeCode();
       while (rooms.has(code)) code = makeCode();
       const state: RoomState = {
         code,
         hostId: socket.id,
-        players: [{ id: socket.id, name, avatar, ready: false }],
+        players: [{ id: socket.id, name, avatar, carId, ready: false }],
         max: 5,
         status: "waiting",
         isPublic: !!isPublic,
@@ -146,12 +147,12 @@ export function setupSocket(httpServer: HTTPServer) {
       emitRoom();
     });
 
-    socket.on("room:join", ({ code, name, avatar, language, difficulty }: { code: string; name: string; avatar?: string; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
+    socket.on("room:join", ({ code, name, avatar, carId, language, difficulty }: { code: string; name: string; avatar?: string; carId?: number; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       const room = rooms.get(code);
       if (!room) return socket.emit("room:error", { message: "Room not found" });
       if (room.players.length >= room.max) return socket.emit("room:error", { message: "Room full" });
       if (room.status !== "waiting") return socket.emit("room:error", { message: "Race already started" });
-      room.players.push({ id: socket.id, name, avatar, ready: false });
+      room.players.push({ id: socket.id, name, avatar, carId, ready: false });
       // If host not set (shouldn't happen) or first player, set race settings
       if (!room.raceLanguage) room.raceLanguage = language ?? room.raceLanguage;
       if (!room.raceDifficulty) room.raceDifficulty = difficulty ?? room.raceDifficulty;

@@ -92,13 +92,14 @@ export default function Race() {
     const mode = params.get("mode");
     const name = useGameStore.getState().username || "Player";
 
+    const carId = useGameStore.getState().selectedCarId;
     if (code) {
-      socket.emit("room:join", { code, name, language, difficulty });
+      socket.emit("room:join", { code, name, carId, language, difficulty });
     } else if (mode === "private") {
-      socket.emit("room:create", { name, isPublic: false, language, difficulty });
+      socket.emit("room:create", { name, carId, isPublic: false, language, difficulty });
     } else {
       // Default: join public lobby
-      socket.emit("queue:joinPublic", { name, language, difficulty });
+      socket.emit("queue:joinPublic", { name, carId, language, difficulty });
     }
 
     socket.on("room:created", (state: any) => {
@@ -144,12 +145,13 @@ export default function Race() {
       const roster = (lobbyPlayersRef.current || []).map((p: any, i: number) => {
         const isBot = String(p.id).startsWith("bot-");
         const isMe = p.id === mySocketId;
+        const resolvedCarId = typeof p.carId === "number" ? p.carId : (i + 2) % 5;
         if (isMe) {
           return {
             ...useGameStore.getState().players.find((x) => x.id === "player"),
             id: "player",
             name: p.name,
-            carId: useGameStore.getState().selectedCarId,
+            carId: typeof p.carId === "number" ? p.carId : useGameStore.getState().selectedCarId,
             progress: 0,
             wpm: 0,
             accuracy: 100,
@@ -162,7 +164,7 @@ export default function Race() {
           return {
             id: p.id,
             name: p.name,
-            carId: (i + 2) % 5,
+            carId: resolvedCarId,
             progress: 0,
             wpm: 0,
             accuracy: 98,
@@ -175,7 +177,7 @@ export default function Race() {
         return {
           id: p.id,
           name: p.name,
-          carId: (i + 2) % 5,
+          carId: resolvedCarId,
           progress: 0,
           wpm: 0,
           accuracy: 100,
