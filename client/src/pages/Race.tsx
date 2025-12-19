@@ -88,12 +88,16 @@ export default function Race() {
     const socket = getSocket();
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
+    const mode = params.get("mode");
     const name = useGameStore.getState().username || "Player";
 
     if (code) {
       socket.emit("room:join", { code, name });
+    } else if (mode === "private") {
+      socket.emit("room:create", { name, isPublic: false });
     } else {
-      socket.emit("room:create", { name, isPublic });
+      // Default: join public lobby
+      socket.emit("queue:joinPublic", { name });
     }
 
     socket.on("room:created", (state: any) => {
@@ -336,6 +340,7 @@ export default function Race() {
                onStartWithBots={startWithBots}
                onStartAnyway={startAnyway}
                canStartAnyway={(() => {
+                 if (!isHost || !isPublic) return false;
                  const real = (lobbyPlayers || []).filter((p: any) => !String(p.id).startsWith("bot-")).length;
                  const elapsed = Date.now() - lobbyEnterAtRef.current;
                  return real >= 2 && real < 5 && elapsed >= 8000;

@@ -18,12 +18,38 @@ interface RoomState {
 }
 
 const rooms = new Map<string, RoomState>();
+let currentPublicLobbyCode: string | null = null;
 
 function makeCode(len = 5) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s = "";
   for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
   return s;
+}
+
+function createPublicLobby(): RoomState {
+  let code = makeCode();
+  while (rooms.has(code)) code = makeCode();
+  const lobby: RoomState = {
+    code,
+    hostId: "",
+    players: [],
+    max: 5,
+    status: "waiting",
+    isPublic: true,
+  };
+  (lobby as any).createdAt = Date.now();
+  rooms.set(code, lobby);
+  currentPublicLobbyCode = code;
+  return lobby;
+}
+
+function getOrCreatePublicLobby(): RoomState {
+  if (currentPublicLobbyCode) {
+    const r = rooms.get(currentPublicLobbyCode);
+    if (r && r.status === "waiting") return r;
+  }
+  return createPublicLobby();
 }
 
 export function setupSocket(httpServer: HTTPServer) {
@@ -48,6 +74,40 @@ export function setupSocket(httpServer: HTTPServer) {
       const room = rooms.get(currentRoom);
       if (room) io.to(currentRoom).emit("room:update", room);
     }
+
+    socket.on("queue:joinPublic", ({ name, avatar }: { name: string; avatar?: string }) => {
+      const lobby = getOrCreatePublicLobby();
+      socket.join(lobby.code);
+      currentRoom = lobby.code;
+      
+      const existing = lobby.players.find(p => p.id === socket.id);
+      if (!existing) {
+        lobby.players.push({ id: socket.id, name, avatar, ready: false });
+        // First player becomes host
+        if (!lobby.hostId) {
+          lobby.hostId = socket.id;
+          (lobby as any).createdAt = Date.now();
+        }
+      }
+
+      socket.emit("room:joined", lobby);
+      emitRoom();
+
+      // Auto-start when full with real players
+      const realPlayers = lobby.players.filter(p => !String(p.id).startsWith("bot-"));
+      if (lobby.status === "waiting" && realPlayers.length >= lobby.max) {
+        lobby.status = "countdown";
+        emitRoom();
+        io.to(lobby.code).emit("race:countdown", { from: 3 });
+        setTimeout(() => {
+          lobby.status = "racing";
+          emitRoom();
+          io.to(lobby.code).emit("race:start");
+          // Create fresh public lobby for next players
+          createPublicLobby();
+        }, 3000);
+      }
+    });
 
     socket.on("room:create", ({ name, avatar, isPublic }: { name: string; avatar?: string; isPublic?: boolean }) => {
       let code = makeCode();
@@ -153,15 +213,18 @@ export function setupSocket(httpServer: HTTPServer) {
       emitRoom();
     });
 
-    // Public room: allow start anyway with minimum players and no bots
+    // Public lobby: host-only start after 8s with min 2 players
     socket.on("room:startAnyway", () => {
       if (!currentRoom) return;
       const room = rooms.get(currentRoom);
-      if (!room) return;
-      if (room.status !== "waiting") return;
-      // Must be public room; if not flagged, treat as public by default
-      const realPlayers = room.players.filter((p) => !String(p.id).startsWith("bot-"));
-      if (realPlayers.length >= 2 && realPlayers.length <= room.max) {
+      if (!room || !room.isPublic || room.status !== "waiting") return;
+      if (room.hostId !== socket.id) return; // host only
+      
+      const realPlayers = room.players.filter(p => !String(p.id).startsWith("bot-"));
+      const createdAt = (room as any).createdAt || Date.now();
+      const elapsed = Date.now() - createdAt;
+      
+      if (realPlayers.length >= 2 && realPlayers.length < room.max && elapsed >= 8000) {
         room.status = "countdown";
         emitRoom();
         io.to(currentRoom).emit("race:countdown", { from: 3 });
@@ -169,6 +232,8 @@ export function setupSocket(httpServer: HTTPServer) {
           room.status = "racing";
           emitRoom();
           io.to(currentRoom!).emit("race:start");
+          // Create fresh public lobby for next players
+          if (room.isPublic) createPublicLobby();
         }, 3000);
       }
     });
@@ -190,14 +255,23 @@ export function setupSocket(httpServer: HTTPServer) {
       if (!currentRoom) return;
       const room = rooms.get(currentRoom);
       if (!room) return;
-      room.players = room.players.filter((p) => p.id !== socket.id);
-      // reassign host if needed
+      room.players = room.players.filter(p => p.id !== socket.id);
+      
+      // Reassign host if needed
       if (room.hostId === socket.id && room.players.length > 0) {
-        room.hostId = room.players[0].id;
+        const nextReal = room.players.find(p => !String(p.id).startsWith("bot-"));
+        room.hostId = nextReal ? nextReal.id : room.players[0].id;
       }
-      // remove empty room
-      if (room.players.length === 0) rooms.delete(currentRoom);
-      else emitRoom();
+      
+      // Remove empty room
+      if (room.players.length === 0) {
+        rooms.delete(currentRoom);
+        if (currentPublicLobbyCode === currentRoom) {
+          currentPublicLobbyCode = null;
+        }
+      } else {
+        emitRoom();
+      }
     });
   });
 

@@ -43,9 +43,9 @@ export function LobbyPanel({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {isHost && (
+            {isHost && !isPublic && (
               <button onClick={() => onTogglePrivacy(!isPublic)} className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium">
-                Make {isPublic ? 'Private' : 'Public'}
+                Make Public
               </button>
             )}
             <div className="text-sm text-muted-foreground">{players.length}/5 players</div>
@@ -69,13 +69,18 @@ export function LobbyPanel({
         <div className="mt-5 flex items-center justify-between gap-3 flex-wrap">
           <div className="text-sm text-muted-foreground">Waiting for players... ({waitingCount} more)</div>
           <div className="flex items-center gap-2">
-            <button onClick={onStartAnyway} disabled={!canStartAnyway} className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50">
-              Start now
-            </button>
-            {isHost && (
-              <button onClick={onStartWithBots} className="inline-flex items-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
-                Start now with bots
-              </button>
+            {isPublic ? (
+              isHost && (
+                <button onClick={onStartAnyway} disabled={!canStartAnyway} className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                  Start now
+                </button>
+              )
+            ) : (
+              isHost && (
+                <button onClick={onStartWithBots} className="inline-flex items-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
+                  Start now with bots
+                </button>
+              )
             )}
           </div>
         </div>

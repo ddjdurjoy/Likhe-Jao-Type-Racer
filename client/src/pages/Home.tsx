@@ -49,21 +49,32 @@ export default function Home() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [showRaceDialog, setShowRaceDialog] = useState(false);
+  const [raceDialogStep, setRaceDialogStep] = useState<"root" | "private" | "join">("root");
+  const [pendingDestination, setPendingDestination] = useState<string>("/race?mode=public");
   const [tempUsername, setTempUsername] = useState(username);
+  const [joinCode, setJoinCode] = useState("");
 
-  const handleStartRace = () => {
+  const startRaceTo = (dest: string) => {
     if (!username) {
+      setPendingDestination(dest);
       setShowStartDialog(true);
     } else {
-      setLocation("/race");
+      setLocation(dest);
     }
+  };
+
+  const openRaceDialog = () => {
+    setRaceDialogStep("root");
+    setJoinCode("");
+    setShowRaceDialog(true);
   };
 
   const handleConfirmStart = () => {
     if (tempUsername.trim()) {
       setUsername(tempUsername.trim());
       setShowStartDialog(false);
-      setLocation("/race");
+      setLocation(pendingDestination);
     }
   };
 
@@ -124,7 +135,7 @@ export default function Home() {
           <Button
             size="lg"
             className="h-20 text-lg font-semibold gap-3"
-            onClick={handleStartRace}
+            onClick={openRaceDialog}
             data-testid="button-start-race"
           >
             <Play className="w-6 h-6" />
@@ -215,6 +226,100 @@ export default function Home() {
         </a>
         <span> | All rights reserved.</span>
       </footer>
+
+      <Dialog open={showRaceDialog} onOpenChange={setShowRaceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {language === "bn" ? "রেস মোড নির্বাচন করুন" : "Choose Race Mode"}
+            </DialogTitle>
+            <DialogDescription>
+              {language === "bn" ? "পাবলিক ম্যাচ বা প্রাইভেট রুম নির্বাচন করুন" : "Select Public Match or Private Room"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {raceDialogStep === "root" && (
+            <div className="grid gap-3 mt-4">
+              <Button
+                className="h-12 text-base font-semibold gap-2"
+                onClick={() => {
+                  setShowRaceDialog(false);
+                  startRaceTo("/race?mode=public");
+                }}
+              >
+                <Users className="w-5 h-5" />
+                {language === "bn" ? "পাবলিক ম্যাচ" : "Public Match"}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-base font-semibold gap-2"
+                onClick={() => setRaceDialogStep("private")}
+              >
+                <Play className="w-5 h-5" />
+                {language === "bn" ? "প্রাইভেট রুম" : "Private Room"}
+              </Button>
+            </div>
+          )}
+
+          {raceDialogStep === "private" && (
+            <div className="grid gap-3 mt-4">
+              <Button
+                className="h-12 text-base font-semibold"
+                onClick={() => {
+                  setShowRaceDialog(false);
+                  startRaceTo("/race?mode=private");
+                }}
+              >
+                {language === "bn" ? "রুম তৈরি করুন" : "Create Room"}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-base font-semibold"
+                onClick={() => setRaceDialogStep("join")}
+              >
+                {language === "bn" ? "রুমে যোগ দিন" : "Join Room"}
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-10"
+                onClick={() => setRaceDialogStep("root")}
+              >
+                {language === "bn" ? "ফিরে যান" : "Back"}
+              </Button>
+            </div>
+          )}
+
+          {raceDialogStep === "join" && (
+            <div className="grid gap-3 mt-4">
+              <Input
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                placeholder={language === "bn" ? "রুম কোড লিখুন" : "Enter room code"}
+                className="h-12"
+              />
+              <Button
+                className="h-12 text-base font-semibold"
+                onClick={() => {
+                  const code = joinCode.trim();
+                  if (!code) return;
+                  setShowRaceDialog(false);
+                  startRaceTo(`/race?code=${encodeURIComponent(code)}`);
+                }}
+                disabled={!joinCode.trim()}
+              >
+                {language === "bn" ? "যোগ দিন" : "Join"}
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-10"
+                onClick={() => setRaceDialogStep("private")}
+              >
+                {language === "bn" ? "ফিরে যান" : "Back"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <DialogContent className="max-w-md">
