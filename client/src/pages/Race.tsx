@@ -92,7 +92,7 @@ export default function Race() {
     const mode = params.get("mode");
     const name = useGameStore.getState().username || "Player";
 
-    const carId = useGameStore.getState().selectedCarId;
+    const carId = Number(useGameStore.getState().selectedCarId ?? 0);
     if (code) {
       socket.emit("room:join", { code, name, carId, language, difficulty });
     } else if (mode === "private") {

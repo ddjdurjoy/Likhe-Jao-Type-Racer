@@ -88,7 +88,8 @@ export function setupSocket(httpServer: HTTPServer) {
       
       const existing = lobby.players.find(p => p.id === socket.id);
       if (!existing) {
-        lobby.players.push({ id: socket.id, name, avatar, carId, ready: false });
+        const normalizedCarId = Number.isFinite(carId as number) ? Number(carId) : (lobby.players.length % 5);
+        lobby.players.push({ id: socket.id, name, avatar, carId: normalizedCarId, ready: false });
         // First player becomes host (also sets race settings)
         if (!lobby.hostId) {
           lobby.hostId = socket.id;
@@ -132,7 +133,7 @@ export function setupSocket(httpServer: HTTPServer) {
       const state: RoomState = {
         code,
         hostId: socket.id,
-        players: [{ id: socket.id, name, avatar, carId, ready: false }],
+        players: [{ id: socket.id, name, avatar, carId: Number.isFinite(carId as number) ? Number(carId) : 0, ready: false }],
         max: 5,
         status: "waiting",
         isPublic: !!isPublic,
@@ -152,7 +153,8 @@ export function setupSocket(httpServer: HTTPServer) {
       if (!room) return socket.emit("room:error", { message: "Room not found" });
       if (room.players.length >= room.max) return socket.emit("room:error", { message: "Room full" });
       if (room.status !== "waiting") return socket.emit("room:error", { message: "Race already started" });
-      room.players.push({ id: socket.id, name, avatar, carId, ready: false });
+      const normalizedCarId = Number.isFinite(carId as number) ? Number(carId) : (room.players.length % 5);
+      room.players.push({ id: socket.id, name, avatar, carId: normalizedCarId, ready: false });
       // If host not set (shouldn't happen) or first player, set race settings
       if (!room.raceLanguage) room.raceLanguage = language ?? room.raceLanguage;
       if (!room.raceDifficulty) room.raceDifficulty = difficulty ?? room.raceDifficulty;
