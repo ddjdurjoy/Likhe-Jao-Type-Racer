@@ -31,9 +31,12 @@ export function TypingInput({
     }
   }, [disabled, inputRef]);
 
-  const currentWord = words[currentWordIndex] || "";
-  const isCorrect = currentWord.startsWith(currentInput);
-  const completedPortion = currentInput.length;
+  const normalize = useCallback((s: string) => (s ?? "").normalize("NFC"), []);
+  const currentWordRaw = words[currentWordIndex] || "";
+  const currentWord = normalize(currentWordRaw);
+  const normalizedInput = normalize(currentInput);
+  const isCorrect = currentWord.startsWith(normalizedInput);
+  const completedPortion = normalizedInput.length;
 
  // Grapheme segmentation for complex scripts (e.g., Bengali)
  const splitGraphemes = useCallback((text: string) => {
@@ -53,7 +56,7 @@ export function TypingInput({
    return Array.from(text);
  }, [language]);
 
- const currentInputGraphemes = useMemo(() => splitGraphemes(currentInput), [currentInput, splitGraphemes]);
+ const currentInputGraphemes = useMemo(() => splitGraphemes(normalizedInput), [normalizedInput, splitGraphemes]);
 
  const wordVariants = useMemo(() => ({
     initial: { opacity: 0, y: 6 },
@@ -107,7 +110,7 @@ export function TypingInput({
                 >
                   {isCurrentWord ? (
                     <span className="relative">
-                      {splitGraphemes(word).map((char, charIndex) => {
+                      {splitGraphemes(currentWord).map((char, charIndex) => {
                         const isTyped = charIndex < currentInputGraphemes.length;
                         const typedChar = currentInputGraphemes[charIndex];
                         const isCharCorrect = typedChar === char;

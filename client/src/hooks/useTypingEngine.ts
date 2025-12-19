@@ -83,9 +83,10 @@ export function useTypingEngine({
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         bijoyProcessor.current.reset();
-        const currentWord = words[currentWordIndex];
+        const normalize = (s: string) => (s ?? "").normalize("NFC");
+        const currentWord = normalize(words[currentWordIndex]);
 
-        if (currentInput === currentWord) {
+        if (normalize(currentInput) === currentWord) {
           soundManager.playWordComplete();
           setCorrectChars((prev) => prev + currentWord.length + 1);
           setTotalChars((prev) => prev + currentInput.length + 1);
@@ -165,8 +166,9 @@ export function useTypingEngine({
 
       const maybeFinishWithoutSpace = (nextInput: string) => {
         const isLastWord = currentWordIndex === words.length - 1;
-        const currentWord = words[currentWordIndex] || "";
-        if (isLastWord && nextInput === currentWord) {
+        const normalize = (s: string) => (s ?? "").normalize("NFC");
+        const currentWord = normalize(words[currentWordIndex] || "");
+        if (isLastWord && normalize(nextInput) === currentWord) {
           // Finish without requiring trailing space
           setIsFinished(true);
           soundManager.playFinish();
