@@ -14,7 +14,9 @@ export default {
     // Arbitrary values like text-[96px], w-[12px]
     { pattern: /^.*\[.*\].*$/ },
     // Specific fractions seen in Track/Countdown
-    'h-1/3', 'h-2/3', 'text-[96px]', 'sm:text-[150px]', 'md:text-[200px]'
+    'h-1/3', 'h-2/3', 'text-[96px]', 'sm:text-[150px]', 'md:text-[200px]',
+    // Supports variant with arbitrary selector used in headers
+    { pattern: /^supports-\[.*\]:.*$/ }
   ],
   theme: {
     extend: {

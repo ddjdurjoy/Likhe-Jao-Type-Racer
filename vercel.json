@@ -6,10 +6,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api"
+      "destination": "/api/$1"
     },
     {
-      "source": "/(.*)",
+      // Send all non-asset routes to the server (SPA), but let static assets resolve normally
+      "source": "/((?!assets|favicon\\.png|robots\\.txt|manifest\\.json|.*\\.(css|js|png|jpg|jpeg|gif|svg|webp|ico)).*)",
       "destination": "/api"
     }
   ]
