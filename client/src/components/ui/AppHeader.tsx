@@ -85,7 +85,7 @@ export function AppHeader() {
           <DialogHeader>
             <DialogTitle>Sign in / Sign up</DialogTitle>
           </DialogHeader>
-          <Auth />
+          <Auth onAuthed={() => setShowAuth(false)} />
         </DialogContent>
       </Dialog>
 

@@ -344,3 +344,6 @@ export class MemStorage implements IStorage {
 import { PgStorage } from "./pgStorage";
 
 export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();
+
+// Safe startup log (no secrets)
+console.log(`[storage] Using ${process.env.DATABASE_URL ? "PgStorage (Postgres)" : "MemStorage"}`);

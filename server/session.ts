@@ -9,9 +9,10 @@ export const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET || "dev-secret-change-me",
   resave: false,
   saveUninitialized: false,
-  store: process.env.DATABASE_URL
-    ? new PgSession({ pool, tableName: "user_sessions", createTableIfMissing: true })
-    : undefined,
+  store:
+    process.env.DATABASE_URL && pool
+      ? new PgSession({ pool, tableName: "user_sessions", createTableIfMissing: true })
+      : undefined,
   cookie: {
     httpOnly: true,
     sameSite: "lax",

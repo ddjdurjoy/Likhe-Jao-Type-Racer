@@ -1,6 +1,11 @@
 import { randomUUID } from "crypto";
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "./db";
+
+function requireDb() {
+  if (!db) throw new Error("Database not initialized. Set DATABASE_URL.");
+  return db;
+}
 import {
   users,
   playerStats,
@@ -17,7 +22,8 @@ import type { IStorage } from "./storage";
 
 export class PgStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [u] = await db.select().from(users).where(eq(users.id, id));
+    const d = requireDb();
+    const [u] = await d.select().from(users).where(eq(users.id, id));
     return u as any;
   }
 

@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function Auth() {
+export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
 
   const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
+
+  useEffect(() => {
+    if (me.data) onAuthed?.();
+  }, [me.data, onAuthed]);
 
   const signin = useMutation({
     mutationFn: async () => {
