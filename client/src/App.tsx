@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useSound } from "@/hooks/useSound";
 import { CursorVelocityFX } from "@/components/ui/CursorVelocityFX";
+import { AppHeader } from "@/components/ui/AppHeader";
 import { useEffect } from "react";
 import { useGameStore } from "@/lib/stores/gameStore";
 import Home from "@/pages/Home";
@@ -12,6 +13,9 @@ import Race from "@/pages/Race";
 import Practice from "@/pages/Practice";
 import Garage from "@/pages/Garage";
 import Leaderboard from "@/pages/Leaderboard";
+import Auth from "@/pages/Auth";
+import Player from "@/pages/Player";
+import Friends from "@/pages/Friends";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +26,9 @@ function Router() {
       <Route path="/practice" component={Practice} />
       <Route path="/garage" component={Garage} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/auth" component={Auth} />
+      <Route path="/player" component={Player} />
+      <Route path="/friends" component={Friends} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -77,6 +84,7 @@ function App() {
         <Toaster />
         <div className="min-h-screen overflow-x-hidden flex flex-col">
           <CursorVelocityFX />
+          <AppHeader />
           <Router />
         </div>
       </TooltipProvider>

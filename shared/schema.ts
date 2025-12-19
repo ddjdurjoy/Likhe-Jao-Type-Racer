@@ -5,6 +5,13 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey(),
   username: text("username").notNull().unique(),
+  // auth
+  passwordHash: text("password_hash"),
+  email: text("email"),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  emailVerifyToken: text("email_verify_token"),
+  emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at"),
+
   selectedCar: integer("selected_car").default(0),
   theme: text("theme").default("dark"),
   language: text("language").default("en"),
@@ -37,6 +44,22 @@ export const raceResults = pgTable("race_results", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const friends = pgTable("friends", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+  friendUserId: varchar("friend_user_id", { length: 36 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const friendRequests = pgTable("friend_requests", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  fromUserId: varchar("from_user_id", { length: 36 }).notNull(),
+  toUserId: varchar("to_user_id", { length: 36 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending | accepted | declined
+  createdAt: timestamp("created_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+});
+
 export const achievements = pgTable("achievements", {
   id: varchar("id", { length: 36 }).primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull(),
@@ -45,6 +68,8 @@ export const achievements = pgTable("achievements", {
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertFriendSchema = createInsertSchema(friends).omit({ id: true, createdAt: true });
+export const insertFriendRequestSchema = createInsertSchema(friendRequests).omit({ id: true, createdAt: true, respondedAt: true });
 export const insertPlayerStatsSchema = createInsertSchema(playerStats).omit({ id: true });
 export const insertRaceResultSchema = createInsertSchema(raceResults).omit({ id: true, createdAt: true });
 export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, unlockedAt: true });
@@ -55,6 +80,11 @@ export type InsertPlayerStats = z.infer<typeof insertPlayerStatsSchema>;
 export type PlayerStats = typeof playerStats.$inferSelect;
 export type InsertRaceResult = z.infer<typeof insertRaceResultSchema>;
 export type RaceResult = typeof raceResults.$inferSelect;
+export type InsertFriend = z.infer<typeof insertFriendSchema>;
+export type Friend = typeof friends.$inferSelect;
+export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
+export type FriendRequest = typeof friendRequests.$inferSelect;
+
 export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
 export type Achievement = typeof achievements.$inferSelect;
 

@@ -4,10 +4,7 @@ import { useGameStore, CARS } from "@/lib/stores/gameStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { WeatherToggle } from "@/components/ui/WeatherToggle";
-import { LanguageToggle, LanguageSelector } from "@/components/ui/LanguageToggle";
-import { SoundControls } from "@/components/ui/SoundControls";
+import { LanguageSelector } from "@/components/ui/LanguageToggle";
 import { CarPreview } from "@/components/game/Car";
 import {
   Dialog,
@@ -23,12 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Play, Users, Trophy, Settings, Zap, Target, Clock } from "lucide-react";
+import { Play, Users, Trophy, Zap, Target } from "lucide-react";
 import type { Difficulty, Language } from "@shared/schema";
 
 import { AnimatedBackground } from "@/components/game/AnimatedBackground";
-import { HeaderLogo } from "@/components/ui/HeaderLogo";
-
 export default function Home() {
   const [, setLocation] = useLocation();
   const {
@@ -47,7 +42,6 @@ export default function Home() {
     unlockedCars,
   } = useGameStore();
 
-  const [showSettings, setShowSettings] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showRaceDialog, setShowRaceDialog] = useState(false);
   const [raceDialogStep, setRaceDialogStep] = useState<"root" | "private" | "join">("root");
@@ -96,28 +90,6 @@ export default function Home() {
         <AnimatedBackground />
       </div>
       <div className="absolute inset-0 bg-background/60" aria-hidden />
-
-      <header className="relative z-10 flex items-center justify-between p-4 sm:px-6 pt-safe pb-2 border-b border-border">
-        <div className="flex items-center gap-3">
-          {/* Theme + language-aware clickable logo */}
-          <HeaderLogo size={40} />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <LanguageToggle />
-          <SoundControls />
-          <WeatherToggle />
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(true)}
-            data-testid="button-settings"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-        </div>
-      </header>
 
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-6 sm:gap-8">
         <div className="text-center space-y-3 sm:space-y-4 max-w-lg px-2">
@@ -376,59 +348,6 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {language === "bn" ? "সেটিংস" : "Settings"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-6 mt-4">
-<div className="space-y-2">
-              <label className="text-sm font-medium">
-                {language === "bn" ? "নাম" : "Username"}
-              </label>
-              <Input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={language === "bn" ? "নাম লিখুন..." : "Enter name..."}
-                data-testid="input-settings-username"
-                maxLength={20}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {language === "bn" ? "ভাষা" : "Language"}
-              </label>
-              <LanguageSelector value={language} onChange={setLanguage} />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {language === "bn" ? "কঠিনতা" : "Difficulty"}
-              </label>
-              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">
-                    {language === "bn" ? "সহজ (15-30 WPM AI)" : "Easy (15-30 WPM AI)"}
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    {language === "bn" ? "মাঝারি (35-55 WPM AI)" : "Medium (35-55 WPM AI)"}
-                  </SelectItem>
-                  <SelectItem value="hard">
-                    {language === "bn" ? "কঠিন (60-90 WPM AI)" : "Hard (60-90 WPM AI)"}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

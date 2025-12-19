@@ -7,12 +7,8 @@ import { TypingInput } from "@/components/game/TypingInput";
 import { StatsDisplay } from "@/components/game/StatsDisplay";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
-import { WeatherToggle } from "@/components/ui/WeatherToggle";
-import { SoundControls } from "@/components/ui/SoundControls";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, RefreshCw, BookOpen, MessageSquare, Code, Zap } from "lucide-react";
+import { RefreshCw, BookOpen, MessageSquare, Code, Zap } from "lucide-react";
 import type { Difficulty } from "@shared/schema";
 
 type PracticeCategory = "common" | "quotes" | "lyrics" | "code" | "random";
@@ -136,9 +132,6 @@ export default function Practice() {
     setTimeout(() => focusInput(), 0);
   };
 
-  const handleBack = () => {
-    setLocation("/");
-  };
 
   const avgWpm =
     sessionStats.races > 0
@@ -151,31 +144,6 @@ export default function Practice() {
         <AnimatedBackground />
       </div>
       <div className="absolute inset-0 bg-background/60" aria-hidden />
-      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-          className="gap-2"
-          data-testid="button-back-home"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {language === "bn" ? "ফিরে যান" : "Back"}
-        </Button>
-
-        <h1 className="text-xl font-display font-bold flex items-center gap-2">
-          <Zap className="w-5 h-5 text-primary" />
-          {language === "bn" ? "অনুশীলন মোড" : "Practice Mode"}
-        </h1>
-
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <LanguageToggle />
-          <SoundControls />
-          <WeatherToggle />
-          <ThemeToggle />
-        </div>
-      </header>
-
       <main className="relative z-10 flex-1 min-h-0 flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
         <aside className="w-full md:w-64 space-y-4">
           <Card className="p-4">

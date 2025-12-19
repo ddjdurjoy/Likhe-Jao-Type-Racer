@@ -5,11 +5,8 @@ import { useGameStore } from "@/lib/stores/gameStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { LanguageToggle } from "@/components/ui/LanguageToggle";
-import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Trophy, Medal, Award, Crown } from "lucide-react";
+import { Trophy, Medal, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@shared/schema";
 
@@ -24,9 +21,6 @@ export default function Leaderboard() {
     queryKey: ["/api/leaderboard", activeTab],
   });
 
-  const handleBack = () => {
-    setLocation("/");
-  };
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -62,29 +56,6 @@ export default function Leaderboard() {
         <AnimatedBackground />
       </div>
       <div className="absolute inset-0 bg-background/60 pointer-events-none z-0" aria-hidden />
-      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBack}
-          className="gap-2"
-          data-testid="button-back-home"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {language === "bn" ? "ফিরে যান" : "Back"}
-        </Button>
-
-        <h1 className="text-xl font-display font-bold flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-primary" />
-          {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
-        </h1>
-
-        <div className="flex items-center gap-2">
-          <LanguageToggle />
-          <WeatherToggle />
-          <ThemeToggle />
-        </div>
-      </header>
 
       <main className="relative z-10 flex-1 p-6">
         <div className="max-w-3xl mx-auto">

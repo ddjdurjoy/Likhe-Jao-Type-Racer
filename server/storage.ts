@@ -10,6 +10,21 @@ import type {
 } from "@shared/schema";
 
 export interface IStorage {
+  // auth
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUserWithAuth(data: { username: string; passwordHash: string; email?: string | null }): Promise<User>;
+  setEmailVerification(userId: string, token: string, expiresAt: Date): Promise<void>;
+  verifyEmailToken(token: string): Promise<User | undefined>;
+
+  // friends
+  searchUsers(q: string, limit?: number): Promise<User[]>;
+  createFriendRequest(fromUserId: string, toUserId: string): Promise<void>;
+  listFriendRequests(userId: string): Promise<any[]>;
+  respondFriendRequest(requestId: string, accept: boolean): Promise<void>;
+  listFriends(userId: string): Promise<User[]>;
+  removeFriend(userId: string, friendUserId: string): Promise<void>;
+
+
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -27,6 +42,8 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private friendRequests: Map<string, any>;
+  private friends: Map<string, any>;
   private users: Map<string, User>;
   private playerStats: Map<string, PlayerStats>;
   private raceResults: Map<string, RaceResult>;
@@ -35,6 +52,8 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.playerStats = new Map();
     this.raceResults = new Map();
+    this.friendRequests = new Map();
+    this.friends = new Map();
     this.seedLeaderboard();
   }
 
@@ -80,6 +99,106 @@ export class MemStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find((u: any) => (u.email || "").toLowerCase() === email.toLowerCase());
+  }
+
+  async createUserWithAuth(data: { username: string; passwordHash: string; email?: string | null }): Promise<User> {
+    const id = randomUUID();
+    const user: any = {
+      id,
+      username: data.username,
+      passwordHash: data.passwordHash,
+      email: data.email ?? null,
+      emailVerifiedAt: null,
+      emailVerifyToken: null,
+      emailVerifyTokenExpiresAt: null,
+      selectedCar: 0,
+      theme: "dark",
+      language: "en",
+      soundEnabled: 1,
+      volume: 80,
+    };
+    this.users.set(id, user);
+    await this.createPlayerStats({
+      userId: id,
+      totalRaces: 0,
+      wins: 0,
+      avgWpm: 0,
+      bestWpm: 0,
+      accuracy: 0,
+      totalWords: 0,
+      playTimeSeconds: 0,
+    });
+    return user;
+  }
+
+  async setEmailVerification(userId: string, token: string, expiresAt: Date): Promise<void> {
+    const u: any = this.users.get(userId);
+    if (!u) return;
+    u.emailVerifyToken = token;
+    u.emailVerifyTokenExpiresAt = expiresAt;
+    this.users.set(userId, u);
+  }
+
+  async verifyEmailToken(token: string): Promise<User | undefined> {
+    const now = Date.now();
+    const u: any = Array.from(this.users.values()).find((x: any) => x.emailVerifyToken === token);
+    if (!u) return undefined;
+    const exp = u.emailVerifyTokenExpiresAt ? new Date(u.emailVerifyTokenExpiresAt).getTime() : 0;
+    if (exp && exp < now) return undefined;
+    u.emailVerifiedAt = new Date();
+    u.emailVerifyToken = null;
+    u.emailVerifyTokenExpiresAt = null;
+    this.users.set(u.id, u);
+    return u;
+  }
+
+  async searchUsers(q: string, limit = 20): Promise<User[]> {
+    const s = q.toLowerCase();
+    return Array.from(this.users.values()).filter((u: any) => u.username.toLowerCase().includes(s)).slice(0, limit);
+  }
+
+  async createFriendRequest(fromUserId: string, toUserId: string): Promise<void> {
+    const existing = Array.from(this.friendRequests.values()).find((r: any) => r.fromUserId === fromUserId && r.toUserId === toUserId && r.status === 'pending');
+    if (existing) return;
+    const id = randomUUID();
+    this.friendRequests.set(id, { id, fromUserId, toUserId, status: 'pending', createdAt: new Date(), respondedAt: null });
+  }
+
+  async listFriendRequests(userId: string): Promise<any[]> {
+    return Array.from(this.friendRequests.values()).filter((r: any) => r.toUserId === userId && r.status === 'pending');
+  }
+
+  async respondFriendRequest(requestId: string, accept: boolean): Promise<void> {
+    const r: any = this.friendRequests.get(requestId);
+    if (!r) return;
+    r.status = accept ? 'accepted' : 'declined';
+    r.respondedAt = new Date();
+    this.friendRequests.set(requestId, r);
+    if (accept) {
+      const id1 = randomUUID();
+      const id2 = randomUUID();
+      this.friends.set(id1, { id: id1, userId: r.fromUserId, friendUserId: r.toUserId, createdAt: new Date() });
+      this.friends.set(id2, { id: id2, userId: r.toUserId, friendUserId: r.fromUserId, createdAt: new Date() });
+    }
+  }
+
+  async listFriends(userId: string): Promise<User[]> {
+    const rel = Array.from(this.friends.values()).filter((f: any) => f.userId === userId);
+    const ids = rel.map((f: any) => f.friendUserId);
+    return ids.map((id: string) => this.users.get(id)).filter(Boolean) as any;
+  }
+
+  async removeFriend(userId: string, friendUserId: string): Promise<void> {
+    for (const [id, f] of Array.from(this.friends.entries())) {
+      const ff: any = f;
+      if ((ff.userId === userId && ff.friendUserId === friendUserId) || (ff.userId === friendUserId && ff.friendUserId === userId)) {
+        this.friends.delete(id);
+      }
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -221,4 +340,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Choose DB-backed storage when DATABASE_URL is available
+import { PgStorage } from "./pgStorage";
+
+export const storage = process.env.DATABASE_URL ? new PgStorage() : new MemStorage();

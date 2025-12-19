@@ -72,8 +72,12 @@ export function setupSocket(httpServer: HTTPServer) {
     },
   });
 
+  const onlineByUserId = new Map<string, Set<string>>();
+  const userIdBySocketId = new Map<string, string>();
+
   io.on("connection", (socket) => {
     let currentRoom: string | null = null;
+    let authedUserId: string | null = null;
 
     function emitRoom() {
       if (!currentRoom) return;
@@ -86,9 +90,13 @@ export function setupSocket(httpServer: HTTPServer) {
       socket.join(lobby.code);
       currentRoom = lobby.code;
       
+      const normalizedCarId = Number.isFinite(carId as number) ? Number(carId) : (lobby.players.length % 5);
       const existing = lobby.players.find(p => p.id === socket.id);
+      if (existing) {
+        // Update carId if it was missing/old
+        existing.carId = normalizedCarId;
+      }
       if (!existing) {
-        const normalizedCarId = Number.isFinite(carId as number) ? Number(carId) : (lobby.players.length % 5);
         lobby.players.push({ id: socket.id, name, avatar, carId: normalizedCarId, ready: false });
         // First player becomes host (also sets race settings)
         if (!lobby.hostId) {
@@ -151,10 +159,16 @@ export function setupSocket(httpServer: HTTPServer) {
     socket.on("room:join", ({ code, name, avatar, carId, language, difficulty }: { code: string; name: string; avatar?: string; carId?: number; language?: "en" | "bn"; difficulty?: "easy" | "medium" | "hard" }) => {
       const room = rooms.get(code);
       if (!room) return socket.emit("room:error", { message: "Room not found" });
-      if (room.players.length >= room.max) return socket.emit("room:error", { message: "Room full" });
-      if (room.status !== "waiting") return socket.emit("room:error", { message: "Race already started" });
       const normalizedCarId = Number.isFinite(carId as number) ? Number(carId) : (room.players.length % 5);
-      room.players.push({ id: socket.id, name, avatar, carId: normalizedCarId, ready: false });
+      if (room.players.length >= room.max) return socket.emit("room:error", { message: "Room full" });
+      const existing = room.players.find((p) => p.id === socket.id);
+      if (existing) {
+        existing.carId = normalizedCarId;
+      }
+      if (room.status !== "waiting") return socket.emit("room:error", { message: "Race already started" });
+      if (!existing) {
+        room.players.push({ id: socket.id, name, avatar, carId: normalizedCarId, ready: false });
+      }
       // If host not set (shouldn't happen) or first player, set race settings
       if (!room.raceLanguage) room.raceLanguage = language ?? room.raceLanguage;
       if (!room.raceDifficulty) room.raceDifficulty = difficulty ?? room.raceDifficulty;
@@ -285,6 +299,30 @@ export function setupSocket(httpServer: HTTPServer) {
       socket.to(currentRoom).emit("race:position", { id: socket.id, progress: clamped });
     });
 
+    // Presence auth: client sends userId after login
+    socket.on("presence:auth", async ({ userId }: { userId: string }) => {
+      authedUserId = userId;
+      userIdBySocketId.set(socket.id, userId);
+      const set = onlineByUserId.get(userId) ?? new Set<string>();
+      set.add(socket.id);
+      onlineByUserId.set(userId, set);
+      socket.broadcast.emit("presence:update", { userId, online: true });
+    });
+
+    socket.on("presence:who", ({ userIds }: { userIds: string[] }) => {
+      const status = (userIds || []).map((id) => ({ userId: id, online: (onlineByUserId.get(id)?.size ?? 0) > 0 }));
+      socket.emit("presence:status", status);
+    });
+
+    socket.on("friends:invite", ({ toUserId }: { toUserId: string }) => {
+      if (!authedUserId) return;
+      const targets = onlineByUserId.get(toUserId);
+      if (!targets) return;
+      for (const sid of targets) {
+        io.to(sid).emit("friends:invite", { fromUserId: authedUserId, t: Date.now() });
+      }
+    });
+
     socket.on("room:chat", ({ message }: { message: string }) => {
       if (!currentRoom) return;
       const m = (message || "").slice(0, 200);
@@ -292,6 +330,20 @@ export function setupSocket(httpServer: HTTPServer) {
     });
 
     socket.on("disconnect", () => {
+      // presence cleanup
+      const uid = userIdBySocketId.get(socket.id);
+      if (uid) {
+        userIdBySocketId.delete(socket.id);
+        const set = onlineByUserId.get(uid);
+        if (set) {
+          set.delete(socket.id);
+          if (set.size === 0) {
+            onlineByUserId.delete(uid);
+            socket.broadcast.emit("presence:update", { userId: uid, online: false });
+          }
+        }
+      }
+
       if (!currentRoom) return;
       const room = rooms.get(currentRoom);
       if (!room) return;

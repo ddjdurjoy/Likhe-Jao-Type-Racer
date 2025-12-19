@@ -7,10 +7,16 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+import { registerAuthRoutes } from "./authRoutes";
+import { registerFriendRoutes } from "./friendRoutes";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  registerAuthRoutes(app);
+  registerFriendRoutes(app);
 
   app.get("/api/users/:id", async (req, res) => {
     try {
