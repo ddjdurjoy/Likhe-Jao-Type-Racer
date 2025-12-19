@@ -27,6 +27,7 @@ import { Play, Users, Trophy, Settings, Zap, Target, Clock } from "lucide-react"
 import type { Difficulty, Language } from "@shared/schema";
 
 import { AnimatedBackground } from "@/components/game/AnimatedBackground";
+import { HeaderLogo } from "@/components/ui/HeaderLogo";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -87,11 +88,8 @@ export default function Home() {
 
       <header className="relative z-10 flex items-center justify-between p-4 sm:px-6 pt-safe pb-2 border-b border-border">
         <div className="flex items-center gap-3">
-          {language === "bn" ? (
-            <img src="/Logo%20For%20Bengali.svg" alt="লিখে যাও" className="h-10 w-auto" />
-          ) : (
-            <img src="/Logo%20For%20English.svg" alt="Likhe Jao" className="h-10 w-auto" />
-          )}
+          {/* Theme + language-aware clickable logo */}
+          <HeaderLogo size={40} />
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
