@@ -24,7 +24,7 @@ export function Car({
 }: CarProps) {
   const car = CARS[carId] || CARS[0];
 
-  return (
+ return (
     <div
       className={cn(
         "absolute transition-all duration-100 ease-out",
@@ -66,54 +66,55 @@ export function Car({
           </div>
         )}
 
-        <svg
-          width="48"
-          height="24"
-          viewBox="0 0 48 24"
-          fill="none"
-          className={cn(
-            "drop-shadow-md transition-transform",
-            isPlayer && "scale-110"
-          )}
-        >
-          <path
-            d="M4 16C4 14 6 10 12 10L20 8C24 6 32 6 36 8L44 12C46 13 46 16 44 18H40C40 20 38 22 36 22C34 22 32 20 32 18H16C16 20 14 22 12 22C10 22 8 20 8 18H4V16Z"
-            fill={car.color}
-            className="drop-shadow-sm"
-          />
-          <path
-            d="M14 10L18 6C20 4 28 4 30 6L34 10"
-            stroke={car.color}
-            strokeWidth="2"
-            fill="none"
-            className="opacity-80"
-          />
-          <rect
-            x="16"
-            y="6"
-            width="16"
-            height="6"
-            rx="1"
-            fill="white"
-            fillOpacity="0.3"
-          />
-          <circle
-            cx="12"
-            cy="18"
-            r="3"
-            fill="#1f2937"
-            className={cn(isRacing && "animate-wheel-spin")}
-          />
-          <circle
-            cx="36"
-            cy="18"
-            r="3"
-            fill="#1f2937"
-            className={cn(isRacing && "animate-wheel-spin")}
-          />
-          <circle cx="12" cy="18" r="1.5" fill="#6b7280" />
-          <circle cx="36" cy="18" r="1.5" fill="#6b7280" />
-        </svg>
+         
+           <svg
+           width="48"
+           height="24"
+           viewBox="0 0 48 24"
+           fill="none"
+           className={cn(
+             "drop-shadow-md transition-transform",
+             isPlayer && "scale-110"
+           )}
+         >
+           <path
+             d="M4 16C4 14 6 10 12 10L20 8C24 6 32 6 36 8L44 12C46 13 46 16 44 18H40C40 20 38 22 36 22C34 22 32 20 32 18H16C16 20 14 22 12 22C10 22 8 20 8 18H4V16Z"
+             fill={car.color}
+             className="drop-shadow-sm"
+           />
+           <path
+             d="M14 10L18 6C20 4 28 4 30 6L34 10"
+             stroke={car.color}
+             strokeWidth="2"
+             fill="none"
+             className="opacity-80"
+           />
+           <rect
+             x="16"
+             y="6"
+             width="16"
+             height="6"
+             rx="1"
+             fill="white"
+             fillOpacity="0.3"
+           />
+           <circle
+             cx="12"
+             cy="18"
+             r="3"
+             fill="#1f2937"
+             className={cn(isRacing && "animate-wheel-spin")}
+           />
+           <circle
+             cx="36"
+             cy="18"
+             r="3"
+             fill="#1f2937"
+             className={cn(isRacing && "animate-wheel-spin")}
+           />
+           <circle cx="12" cy="18" r="1.5" fill="#6b7280" />
+           <circle cx="36" cy="18" r="1.5" fill="#6b7280" />
+         </svg>
 
         {isRacing && progress > 10 && (
           <div className="absolute -right-2 top-1/2 -translate-y-1/2 flex gap-0.5">
@@ -188,37 +189,37 @@ export function CarPreview({
       data-testid={`car-preview-${carId}`}
     >
       <svg
-        width={width}
-        height={height}
-        viewBox="0 0 48 24"
-        fill="none"
-        className={cn("transition-transform", selected && "scale-110")}
-      >
-        <path
-          d="M4 16C4 14 6 10 12 10L20 8C24 6 32 6 36 8L44 12C46 13 46 16 44 18H40C40 20 38 22 36 22C34 22 32 20 32 18H16C16 20 14 22 12 22C10 22 8 20 8 18H4V16Z"
-          fill={car.color}
-        />
-        <path
-          d="M14 10L18 6C20 4 28 4 30 6L34 10"
-          stroke={car.color}
-          strokeWidth="2"
-          fill="none"
-          className="opacity-80"
-        />
-        <rect
-          x="16"
-          y="6"
-          width="16"
-          height="6"
-          rx="1"
-          fill="white"
-          fillOpacity="0.3"
-        />
-        <circle cx="12" cy="18" r="3" fill="#1f2937" />
-        <circle cx="36" cy="18" r="3" fill="#1f2937" />
-        <circle cx="12" cy="18" r="1.5" fill="#6b7280" />
-        <circle cx="36" cy="18" r="1.5" fill="#6b7280" />
-      </svg>
+         width={width}
+         height={height}
+         viewBox="0 0 48 24"
+         fill="none"
+         className={cn("transition-transform", selected && "scale-110")}
+       >
+         <path
+           d="M4 16C4 14 6 10 12 10L20 8C24 6 32 6 36 8L44 12C46 13 46 16 44 18H40C40 20 38 22 36 22C34 22 32 20 32 18H16C16 20 14 22 12 22C10 22 8 20 8 18H4V16Z"
+           fill={car.color}
+         />
+         <path
+           d="M14 10L18 6C20 4 28 4 30 6L34 10"
+           stroke={car.color}
+           strokeWidth="2"
+           fill="none"
+           className="opacity-80"
+         />
+         <rect
+           x="16"
+           y="6"
+           width="16"
+           height="6"
+           rx="1"
+           fill="white"
+           fillOpacity="0.3"
+         />
+         <circle cx="12" cy="18" r="3" fill="#1f2937" />
+         <circle cx="36" cy="18" r="3" fill="#1f2937" />
+         <circle cx="12" cy="18" r="1.5" fill="#6b7280" />
+         <circle cx="36" cy="18" r="1.5" fill="#6b7280" />
+       </svg>
 
       <div className="mt-2 text-center">
         <p className="text-sm font-medium">{car.name}</p>

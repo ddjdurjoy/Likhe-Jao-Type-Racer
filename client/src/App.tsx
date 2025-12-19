@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useSound } from "@/hooks/useSound";
 import { CursorVelocityFX } from "@/components/ui/CursorVelocityFX";
 import { useEffect } from "react";
 import { useGameStore } from "@/lib/stores/gameStore";
@@ -61,13 +62,20 @@ function ThemeInitializer() {
   return null;
 }
 
+function SoundInit() {
+  // Mount global sound sync
+  useSound();
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeInitializer />
+        <SoundInit />
         <Toaster />
-        <div className="h-screen overflow-hidden flex flex-col">
+        <div className="min-h-screen overflow-x-hidden flex flex-col">
           <CursorVelocityFX />
           <Router />
         </div>

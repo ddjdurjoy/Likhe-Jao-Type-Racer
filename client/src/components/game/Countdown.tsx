@@ -49,7 +49,7 @@ export function Countdown({ onComplete }: CountdownProps) {
         <div
           key={currentNumber}
           className={cn(
-            "text-[150px] md:text-[200px] font-display font-bold text-primary animate-countdown",
+            "text-[96px] sm:text-[150px] md:text-[200px] font-display font-bold text-primary animate-countdown",
             countdown === 0 && "text-success"
           )}
         >
@@ -59,7 +59,7 @@ export function Countdown({ onComplete }: CountdownProps) {
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className={cn(
-              "w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-primary/30",
+              "w-40 h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 rounded-full border-4 border-primary/30",
               countdown === 0 && "border-success/30"
             )}
             style={{

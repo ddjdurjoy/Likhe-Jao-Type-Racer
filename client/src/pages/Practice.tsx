@@ -144,7 +144,7 @@ export default function Practice() {
           {language === "bn" ? "অনুশীলন মোড" : "Practice Mode"}
         </h1>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <LanguageToggle />
           <SoundControls />
           <WeatherToggle />

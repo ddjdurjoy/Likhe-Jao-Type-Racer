@@ -50,6 +50,9 @@ input, textarea { caret-color: hsl(var(--primary)); }
 /* Hide scrollbars but keep scroll functionality */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Globally hide scrollbars while preserving scroll behavior */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
 @tailwind components;
 @tailwind utilities;
 
@@ -337,7 +340,9 @@ input, textarea { caret-color: hsl(var(--primary)); }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    overflow: hidden; /* Prevent scrollbars */
+    /* Allow vertical scroll on small screens, hide only horizontal overflow */
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   html, body, #root {

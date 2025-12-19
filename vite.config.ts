@@ -19,6 +19,12 @@ export default defineConfig({
         ]
       : []),
   ],
+  css: {
+    // Workaround for PostCSS warning about missing `from` option
+    postcss: {
+      from: undefined,
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

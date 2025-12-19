@@ -85,7 +85,7 @@ export default function Home() {
       </div>
       <div className="absolute inset-0 bg-background/60" aria-hidden />
 
-      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border">
+      <header className="relative z-10 flex items-center justify-between p-4 sm:px-6 pt-safe pb-2 border-b border-border">
         <div className="flex items-center gap-3">
           {language === "bn" ? (
             <img src="/Logo%20For%20Bengali.svg" alt="লিখে যাও" className="h-10 w-auto" />
@@ -94,7 +94,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <LanguageToggle />
           <SoundControls />
           <WeatherToggle />
@@ -110,19 +110,19 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 gap-8">
-        <div className="text-center space-y-4 max-w-lg">
-          <h2 className="text-4xl md:text-5xl font-display font-bold animated-heading">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-6 sm:gap-8">
+        <div className="text-center space-y-3 sm:space-y-4 max-w-lg px-2">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold animated-heading">
             {language === "bn" ? "লিখে যাও" : "Type to Win"}
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground">
             {language === "bn"
               ? "দ্রুত টাইপ করুন, রেসে জিতুন!"
               : "Race against AI or friends. Type fast, win races!"}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full max-w-2xl px-2">
           <Button
             size="lg"
             className="h-20 text-lg font-semibold gap-3"
@@ -173,7 +173,7 @@ export default function Home() {
               <Users className="w-4 h-4" />
               {language === "bn" ? "আপনার পরিসংখ্যান" : "Your Stats"}
             </h3>
-            <div className="grid grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-primary">{totalRaces}</div>
                 <div className="text-xs text-muted-foreground">
@@ -210,7 +210,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="relative z-10 p-4 text-center text-sm text-muted-foreground border-t border-border">
+      <footer className="relative z-10 p-3 sm:p-4 pb-safe text-center text-xs sm:text-sm text-muted-foreground border-t border-border">
         <span>© 2026 </span>
         <a href="https://www.youtube.com/@ddjDurjoy" target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">
           Durjoy Sir

@@ -61,7 +61,7 @@ export default function Garage() {
       </div>
       <div className="absolute inset-0 bg-background/60" aria-hidden />
 
-      <header className="relative z-10 flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+      <header className="relative z-10 flex items-center justify-between p-3 sm:p-4 pt-safe border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
         <Button
           variant="ghost"
           size="sm"
@@ -85,7 +85,7 @@ export default function Garage() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 p-6 overflow-y-auto no-scrollbar">
+      <main className="relative z-10 flex-1 p-4 sm:p-6 overflow-y-auto no-scrollbar">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-heading font-bold mb-2">
@@ -98,7 +98,7 @@ export default function Garage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
             {CARS.map((car) => {
               const unlocked = isCarUnlocked(car.id);
               const selected = selectedCarId === car.id;

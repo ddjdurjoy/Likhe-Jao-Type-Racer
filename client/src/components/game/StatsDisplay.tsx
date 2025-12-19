@@ -45,7 +45,7 @@ export function StatsDisplay({
 
   return (
     <div className="w-full space-y-4" data-testid="stats-display">
-      <div className="flex items-center justify-between gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           label="WPM"
           value={wpm}
@@ -110,7 +110,7 @@ function StatCard({ label, value, icon, color }: StatCardProps) {
   };
 
   return (
-    <div className="flex-1 bg-transparent rounded-lg p-4 border border-card-border">
+    <div className="bg-transparent rounded-lg p-4 border border-card-border w-full">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("opacity-70", colorClasses[color])}>{icon}</div>
         <span className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -185,7 +185,7 @@ export function RaceResults({
           <ResultStat label="Position" value={`${position}/${totalPlayers}`} />
         </div>
 
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={onPlayAgain}
             className="flex-1 bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover-elevate active-elevate-2 transition-all"

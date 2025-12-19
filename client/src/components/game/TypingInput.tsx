@@ -82,7 +82,7 @@ export function TypingInput({
       onClick={() => inputRef.current?.focus()}
     >
       <div className="relative bg-card rounded-lg p-6 border border-card-border">
-        <div className={cn("flex flex-wrap gap-3 justify-center text-xl md:text-2xl leading-relaxed min-h-[60px]") }>
+        <div className={cn("flex flex-wrap gap-2 sm:gap-3 justify-center text-lg sm:text-xl md:text-2xl leading-relaxed min-h-[48px] sm:min-h-[60px]") }>
           {words.slice(0, Math.min(currentWordIndex + 10, words.length)).map((word, index) => {
             const globalIndex = index;
             const isCurrentWord = globalIndex === currentWordIndex;
@@ -170,7 +170,7 @@ export function TypingInput({
           lang={language === "bn" ? "bn" : "en"}
           placeholder={language === "bn" ? "এখানে টাইপ করুন..." : "Type here..."}
           className={cn(
-            "w-full px-6 py-4 text-xl md:text-2xl rounded-lg border-3 transition-all",
+            "w-full px-4 sm:px-6 py-3 sm:py-4 text-lg sm:text-xl md:text-2xl rounded-lg border-3 transition-all",
             "bg-background focus:outline-none focus:ring-0",
             language === "bn" && "font-bengali",
             !isCorrect && currentInput.length > 0

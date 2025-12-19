@@ -10,11 +10,16 @@ import { Volume2, VolumeX } from "lucide-react";
 
 export function SoundControls() {
   const { soundEnabled, volume, setSoundEnabled, setVolume } = useGameStore();
+  // Initialize and sync audio on open/interactions
+  // Lazy import hook to avoid cyclic load issues in SSR
+  const onAnyInteract = () => {
+    import("@/hooks/useSound").then((m) => m.useSound().ensureUnlocked());
+  };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" data-testid="button-sound-toggle">
+        <Button variant="ghost" size="icon" data-testid="button-sound-toggle" onClick={onAnyInteract}>
           {soundEnabled ? (
             <Volume2 className="w-5 h-5" />
           ) : (
@@ -29,7 +34,7 @@ export function SoundControls() {
             <Button
               variant={soundEnabled ? "default" : "outline"}
               size="sm"
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={() => { onAnyInteract(); setSoundEnabled(!soundEnabled); }}
               data-testid="button-sound-enable"
             >
               {soundEnabled ? "On" : "Off"}
@@ -44,7 +49,7 @@ export function SoundControls() {
               </div>
               <Slider
                 value={[volume]}
-                onValueChange={([val]) => setVolume(val)}
+                onValueChange={([val]) => { onAnyInteract(); setVolume(val); }}
                 max={100}
                 step={5}
                 className="w-full"
