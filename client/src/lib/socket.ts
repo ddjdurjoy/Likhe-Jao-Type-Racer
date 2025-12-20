@@ -6,12 +6,20 @@ export function getSocket() {
   if (!socket) {
     const params = new URLSearchParams(window.location.search);
     const override = params.get("socketUrl");
-    const url = override || (import.meta as any).env.VITE_SOCKET_URL || window.location.origin;
+    
+    // In production: connect to Render for WebSocket, but fallback to origin for dev
+    const defaultUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+      ? "https://likhe-jao-typeracer.onrender.com"  // Render WebSocket service
+      : window.location.origin;  // Local dev
+      
+    const url = override || (import.meta as any).env.VITE_SOCKET_URL || defaultUrl;
+    
     // Debug log to verify URL at runtime
     if (typeof window !== 'undefined') {
       // eslint-disable-next-line no-console
       console.log("Socket URL:", url);
     }
+    
     socket = io(url, {
       path: "/socket.io",
       transports: ["websocket", "polling"],
