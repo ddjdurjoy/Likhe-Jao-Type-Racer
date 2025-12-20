@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
-import { Settings, UserRound } from "lucide-react";
+import { Download, Settings, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useGameStore } from "@/lib/stores/gameStore";
 import type { Difficulty } from "@shared/schema";
 import { useEffect, useMemo, useState } from "react";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 export function AppHeader() {
   const [, setLocation] = useLocation();
@@ -43,6 +44,7 @@ export function AppHeader() {
 
   const needsEmailVerify = useMemo(() => !!me.data?.email && !me.data?.emailVerifiedAt, [me.data]);
   const [showSettings, setShowSettings] = useState(false);
+  const { canInstall, promptInstall } = useInstallPrompt();
   const [showAuth, setShowAuth] = useState(false);
 
 
@@ -160,6 +162,22 @@ export function AppHeader() {
             <WeatherToggle />
           </div>
           <ThemeToggle />
+          {canInstall && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Install"
+              onClick={async () => {
+                const res = await promptInstall();
+                if (res.outcome === "accepted") {
+                  toast({ title: "Installed", description: "Likhe Jao was added to your home screen." });
+                }
+              }}
+            >
+              <Download className="w-5 h-5" />
+            </Button>
+          )}
+
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="Settings">
             <Settings className="w-5 h-5" />
           </Button>
