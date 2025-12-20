@@ -23,7 +23,6 @@ import {
 import { Play, Users, Trophy, Zap, Target } from "lucide-react";
 import type { Difficulty, Language } from "@shared/schema";
 
-import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 export default function Home() {
   const [, setLocation] = useLocation();
   const {
@@ -85,12 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background flex flex-col">
-      <div className="absolute inset-0 pointer-events-none">
-        <AnimatedBackground />
-      </div>
-      <div className="absolute inset-0 bg-background/60" aria-hidden />
-
+    <div className="relative min-h-screen flex flex-col">
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-6 sm:gap-8">
         <div className="text-center space-y-3 sm:space-y-4 max-w-lg px-2">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold animated-heading">

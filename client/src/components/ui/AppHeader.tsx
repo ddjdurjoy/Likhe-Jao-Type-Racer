@@ -7,22 +7,123 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
-import { Settings } from "lucide-react";
+import { Settings, UserRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
 import Auth from "@/pages/Auth";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGameStore } from "@/lib/stores/gameStore";
 import type { Difficulty } from "@shared/schema";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function AppHeader() {
   const [, setLocation] = useLocation();
   const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
-  const { username, setUsername, language, setLanguage, difficulty, setDifficulty } = useGameStore();
+  const { language, setLanguage, difficulty, setDifficulty } = useGameStore();
+
+  const [profileUsername, setProfileUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [verifyToken, setVerifyToken] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  useEffect(() => {
+    if (!me.data) return;
+    setProfileUsername(me.data.username || "");
+    setDisplayName(me.data.displayName || "");
+    setFirstName(me.data.firstName || "");
+    setLastName(me.data.lastName || "");
+    setEmail(me.data.email || "");
+  }, [me.data]);
+
+  const needsEmailVerify = useMemo(() => !!me.data?.email && !me.data?.emailVerifiedAt, [me.data]);
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
+
+  const saveProfileSettings = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", "/api/auth/settings/profile", {
+        username: profileUsername,
+        displayName: displayName.trim() ? displayName.trim() : null,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Profile updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Profile update failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+    },
+  });
+
+  const saveAccountSettings = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", "/api/auth/settings/account", {
+        firstName: firstName.trim() ? firstName.trim() : null,
+        lastName: lastName.trim() ? lastName.trim() : null,
+        email: email.trim() ? email.trim() : null,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Account updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Account update failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+    },
+  });
+
+  const requestEmailVerify = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/email/request");
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({ title: "Verification requested", description: data?.devToken ? `Dev token: ${data.devToken}` : "Check your email." });
+      if (data?.devToken) setVerifyToken(data.devToken);
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to request verification", description: err?.message || "Please try again.", variant: "destructive" as any });
+    },
+  });
+
+  const changePassword = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/password", { currentPassword, newPassword });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Password changed" });
+      setCurrentPassword("");
+      setNewPassword("");
+    },
+    onError: (err: any) => {
+      toast({ title: "Password change failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+    },
+  });
+
+  const verifyEmail = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/email/verify", { token: verifyToken.trim() });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Email verified" });
+      setVerifyToken("");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Verification failed", description: err?.message || "Invalid/expired token.", variant: "destructive" as any });
+    },
+  });
 
   const signout = useMutation({
     mutationFn: async () => {
@@ -35,7 +136,7 @@ export function AppHeader() {
   });
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 border-b border-border bg-transparent">
       <div className="flex items-center justify-between gap-2 p-3 sm:p-4 sm:px-6">
         <div className="flex items-center gap-4">
           <HeaderLogo size={34} />
@@ -46,7 +147,6 @@ export function AppHeader() {
             <Link href="/leaderboard" className="px-2 py-1 rounded hover:bg-muted">Leaderboard</Link>
             {me.data && (
               <>
-                <Link href="/player" className="px-2 py-1 rounded hover:bg-muted">Player</Link>
                 <Link href="/friends" className="px-2 py-1 rounded hover:bg-muted">Friends</Link>
               </>
             )}
@@ -63,10 +163,13 @@ export function AppHeader() {
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="Settings">
             <Settings className="w-5 h-5" />
           </Button>
+
           {me.data ? (
             <>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/player">{me.data.username}</Link>
+              <Button variant="ghost" size="icon" asChild aria-label="Profile">
+                <Link href="/player">
+                  <UserRound className="w-5 h-5" />
+                </Link>
               </Button>
               <Button
                 variant="destructive"
@@ -87,42 +190,155 @@ export function AppHeader() {
           <DialogHeader>
             <DialogTitle>Sign in / Sign up</DialogTitle>
           </DialogHeader>
-          <Auth onAuthed={() => setShowAuth(false)} />
+          <Auth onAuthed={() => setShowAuth(false)} redirectTo="/player" />
         </DialogContent>
       </Dialog>
 
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="w-[95vw] max-w-md">
+        <DialogContent className="w-[95vw] max-w-xl">
           <DialogHeader>
             <DialogTitle>Settings</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Username</label>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} maxLength={24} />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Language</label>
-              <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="bn">Bengali</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Difficulty</label>
-              <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+
+          <Tabs defaultValue="game" className="mt-2">
+            <TabsList className="grid grid-cols-4 w-full">
+              <TabsTrigger value="game">Game</TabsTrigger>
+              <TabsTrigger value="profile" disabled={!me.data}>Profile</TabsTrigger>
+              <TabsTrigger value="account" disabled={!me.data}>Account</TabsTrigger>
+              <TabsTrigger value="password" disabled={!me.data}>Password</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="game" className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Language</label>
+                <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="bn">Bengali</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Difficulty</label>
+                <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="profile" className="space-y-4">
+              {!me.data ? (
+                <p className="text-sm text-muted-foreground">Sign in to edit your profile settings.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Display name</label>
+                    <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={50} placeholder="Your display name" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Username (unique)</label>
+                    <Input value={profileUsername} onChange={(e) => setProfileUsername(e.target.value)} maxLength={24} placeholder="username" />
+                    <p className="text-xs text-muted-foreground">This affects your public link: /racer/&lt;username&gt;</p>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => saveProfileSettings.mutate()} disabled={saveProfileSettings.isPending}>
+                      {saveProfileSettings.isPending ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="account" className="space-y-4">
+              {!me.data ? (
+                <p className="text-sm text-muted-foreground">Sign in to edit your account.</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">First name</label>
+                      <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={50} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Last name</label>
+                      <Input value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={50} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email</label>
+                    <div className="flex gap-2">
+                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+                      {needsEmailVerify && (
+                        <Button variant="secondary" onClick={() => requestEmailVerify.mutate()} disabled={requestEmailVerify.isPending}>
+                          {requestEmailVerify.isPending ? "Sending..." : "Verify email"}
+                        </Button>
+                      )}
+                    </div>
+                    {me.data.email && !needsEmailVerify && (
+                      <p className="text-xs text-muted-foreground">Verified</p>
+                    )}
+                  </div>
+
+                  {/* Dev-only: token entry. In production, user will click link from email. */}
+                  {needsEmailVerify && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Verification token</label>
+                      <div className="flex gap-2">
+                        <Input value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} placeholder="Paste token" />
+                        <Button onClick={() => verifyEmail.mutate()} disabled={verifyEmail.isPending || verifyToken.trim().length < 6}>
+                          {verifyEmail.isPending ? "Verifying..." : "Confirm"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Dev mode: the token is returned by the server. Production: you’ll receive a link by email.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <Button onClick={() => saveAccountSettings.mutate()} disabled={saveAccountSettings.isPending}>
+                      {saveAccountSettings.isPending ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="password" className="space-y-4">
+              {!me.data ? (
+                <p className="text-sm text-muted-foreground">Sign in to change your password.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Current password</label>
+                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">New password</label>
+                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                    <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => changePassword.mutate()}
+                      disabled={changePassword.isPending || currentPassword.length < 1 || newPassword.length < 6}
+                    >
+                      {changePassword.isPending ? "Saving..." : "Change password"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </header>

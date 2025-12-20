@@ -30,6 +30,7 @@ export async function registerRoutes(
     }
   });
 
+  // NOTE: This returns full user row (including email/passwordHash). Avoid using this on the client.
   app.get("/api/users/username/:username", async (req, res) => {
     try {
       const user = await storage.getUserByUsername(req.params.username);
@@ -39,6 +40,52 @@ export async function registerRoutes(
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to get user" });
+    }
+  });
+
+  // Public racer profile endpoint (safe fields only + privacy enforcement)
+  app.get("/api/racer/:username", async (req: any, res) => {
+    try {
+      const user: any = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const viewerId: string | undefined = req.session?.userId;
+      const isSelf = !!viewerId && viewerId === user.id;
+
+      let isFriend = false;
+      if (viewerId && !isSelf) {
+        const friends = await storage.listFriends(user.id);
+        isFriend = friends.some((f: any) => f.id === viewerId);
+      }
+
+      const canSee = (visibility: string | null | undefined) => {
+        const v = visibility || "public";
+        if (v === "public") return true;
+        if (v === "friends") return isSelf || isFriend;
+        if (v === "private") return isSelf;
+        return false;
+      };
+
+      const stats = await storage.getPlayerStats(user.id);
+
+      // Derive unlocked cars from stats
+      const totalRaces = stats?.totalRaces ?? 0;
+      const totalWins = stats?.wins ?? 0;
+      const unlockedCars: number[] = [0, 1];
+      if (totalRaces >= 10) unlockedCars.push(2);
+      if (totalWins >= 5) unlockedCars.push(3);
+      if (totalRaces >= 25) unlockedCars.push(4);
+
+      res.json({
+        username: user.username,
+        avatarUrl: canSee(user.avatarVisibility) ? user.avatarUrl ?? null : null,
+        bio: canSee(user.bioVisibility) ? user.bio ?? null : null,
+        selectedCar: user.selectedCar ?? 0,
+        stats: stats ?? null,
+        unlockedCars,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get racer" });
     }
   });
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { getRandomWords } from "@/lib/data/words";
 import { getSocket } from "@/lib/socket";
 import { LobbyPanel } from "@/components/game/LobbyPanel";
 import { Countdown } from "@/components/game/Countdown";

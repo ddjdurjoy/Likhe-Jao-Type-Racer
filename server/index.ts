@@ -26,6 +26,9 @@ app.use(express.urlencoded({ extended: false }));
 // Sessions (for auth)
 app.use(sessionMiddleware);
 
+// Serve uploaded assets (avatars)
+app.use("/uploads", express.static("uploads"));
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://likhe-jao-type-racer.onrender.com/api/$1"
+      "destination": "https://likhe-jao-typeracer.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",

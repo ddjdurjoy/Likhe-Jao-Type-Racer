@@ -76,12 +76,19 @@ export class MemStorage implements IStorage {
       this.users.set(id, {
         id,
         username: player.username,
+        displayName: null as any,
+        firstName: null as any,
+        lastName: null as any,
+        avatarUrl: null as any,
+        bio: null as any,
+        avatarVisibility: "public" as any,
+        bioVisibility: "public" as any,
         selectedCar: index % 5,
         theme: "dark",
         language: "en",
         soundEnabled: 1,
         volume: 80,
-      });
+      } as any);
 
       this.playerStats.set(id, {
         id: `stats-${index}`,
@@ -110,11 +117,18 @@ export class MemStorage implements IStorage {
     const user: any = {
       id,
       username: data.username,
+      displayName: null,
+      firstName: null,
+      lastName: null,
       passwordHash: data.passwordHash,
       email: data.email ?? null,
       emailVerifiedAt: null,
       emailVerifyToken: null,
       emailVerifyTokenExpiresAt: null,
+      avatarUrl: null,
+      bio: null,
+      avatarVisibility: "public",
+      bioVisibility: "public",
       selectedCar: 0,
       theme: "dark",
       language: "en",
@@ -212,12 +226,28 @@ export class MemStorage implements IStorage {
     const user: User = {
       id,
       username: insertUser.username,
+      displayName: null as any,
+      firstName: null as any,
+      lastName: null as any,
+      // auth fields (nullable)
+      passwordHash: null,
+      email: null,
+      emailVerifiedAt: null,
+      emailVerifyToken: null,
+      emailVerifyTokenExpiresAt: null,
+
+      // public profile
+      avatarUrl: null,
+      bio: null,
+      avatarVisibility: "public" as any,
+      bioVisibility: "public" as any,
+
       selectedCar: insertUser.selectedCar ?? 0,
       theme: insertUser.theme ?? "dark",
       language: insertUser.language ?? "en",
       soundEnabled: insertUser.soundEnabled ?? 1,
       volume: insertUser.volume ?? 80,
-    };
+    } as any;
     this.users.set(id, user);
     return user;
   }

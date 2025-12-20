@@ -5,12 +5,21 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id", { length: 36 }).primaryKey(),
   username: text("username").notNull().unique(),
+  displayName: text("display_name"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   // auth
   passwordHash: text("password_hash"),
   email: text("email"),
   emailVerifiedAt: timestamp("email_verified_at"),
   emailVerifyToken: text("email_verify_token"),
   emailVerifyTokenExpiresAt: timestamp("email_verify_token_expires_at"),
+
+  // public profile
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
+  avatarVisibility: text("avatar_visibility").default("public"),
+  bioVisibility: text("bio_visibility").default("public"),
 
   selectedCar: integer("selected_car").default(0),
   theme: text("theme").default("dark"),

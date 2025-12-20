@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
-export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
+export default function Auth(props: any) {
+  const { onAuthed, redirectTo } = props as { onAuthed?: () => void; redirectTo?: string };  
+  const [, setLocation] = useLocation();
+  const postAuthRedirect = useMemo(() => redirectTo || "/player", [redirectTo]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -18,8 +23,12 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
   const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
 
   useEffect(() => {
-    if (me.data) onAuthed?.();
-  }, [me.data, onAuthed]);
+    if (me.data) {
+      // If Auth is opened while already signed in, close and redirect.
+      onAuthed?.();
+      setLocation(postAuthRedirect);
+    }
+  }, [me.data, onAuthed, postAuthRedirect, setLocation]);
 
   const clearErrors = () => {
     setFormError(null);
@@ -71,6 +80,17 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     setFormError(msg);
   };
 
+  const onAuthSuccess = (kind: "signin" | "signup") => {
+    toast({
+      title: kind === "signin" ? "Signed in" : "Account created",
+      description: kind === "signin" ? "Welcome back." : "Welcome! Your account is ready.",
+    });
+    // close modal (AppHeader passes this to hide Dialog)
+    onAuthed?.();
+    // redirect to dashboard/profile
+    setLocation(postAuthRedirect);
+  };
+
   const signin = useMutation({
     onMutate: () => {
       clearErrors();
@@ -81,6 +101,7 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      onAuthSuccess("signin");
     },
     onError: (err: any) => applyServerError(err),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
@@ -96,25 +117,14 @@ export default function Auth({ onAuthed }: { onAuthed?: () => void }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      onAuthSuccess("signup");
     },
     onError: (err: any) => applyServerError(err),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] }),
   });
 
-  if (me.data) {
-    return (
-      <div className="p-6 max-w-xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Signed in as {me.data.username}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">Go to Player page or Friends page from the header/navigation.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // When already signed in, effect above will close + redirect.
+  if (me.data) return null;
 
   return (
     <div className="p-6 max-w-xl mx-auto">
