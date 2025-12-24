@@ -57,11 +57,31 @@ export function PracticeResults({
     const w = result.chart?.wpm ?? [];
     const r = result.chart?.raw ?? [];
     const len = Math.max(w.length, r.length);
-    return Array.from({ length: len }, (_, i) => ({
-      t: i + 1,
-      wpm: w[i] ?? null,
-      raw: r[i] ?? null,
-    }));
+    
+    // Filter out invalid data points and cap at reasonable maximums
+    const MAX_WPM = 500;
+    const MAX_RAW = 1000;
+    
+    return Array.from({ length: len }, (_, i) => {
+      const wpmVal = w[i];
+      const rawVal = r[i];
+      
+      // Validate and cap WPM
+      const validWpm = (wpmVal !== null && wpmVal !== undefined && !isNaN(wpmVal) && wpmVal >= 0 && wpmVal <= MAX_WPM)
+        ? Math.round(wpmVal)
+        : null;
+      
+      // Validate and cap RAW
+      const validRaw = (rawVal !== null && rawVal !== undefined && !isNaN(rawVal) && rawVal >= 0 && rawVal <= MAX_RAW)
+        ? Math.round(rawVal)
+        : null;
+      
+      return {
+        t: i + 1,
+        wpm: validWpm,
+        raw: validRaw,
+      };
+    }).filter(d => d.wpm !== null || d.raw !== null); // Remove entries where both are null
   }, [result.chart]);
 
   const history10 = useMemo(() => {
@@ -71,12 +91,14 @@ export function PracticeResults({
       return parsed
         .slice()
         .reverse()
+        .slice(0, 10) // Only take last 10
         .map((x, i) => ({
           run: i + 1,
-          wpm: x.wpm,
-          raw: x.raw,
-          acc: x.acc,
-        }));
+          wpm: typeof x.wpm === 'number' && !isNaN(x.wpm) ? Math.round(x.wpm) : 0,
+          raw: typeof x.raw === 'number' && !isNaN(x.raw) ? Math.round(x.raw) : 0,
+          acc: typeof x.acc === 'number' && !isNaN(x.acc) ? Math.round(x.acc) : 0,
+        }))
+        .filter(x => x.wpm > 0); // Only show valid runs
     } catch {
       return [] as { run: number; wpm: number; raw: number; acc: number }[];
     }
@@ -127,62 +149,141 @@ export function PracticeResults({
           )}
 
           <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            <div className="rounded-lg border border-card-border p-3 sm:p-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                {language === "bn" ? "গ্রাফ" : "Chart"}
+            <div className="rounded-lg border border-card-border p-3 sm:p-4 bg-card/30">
+              <div className="text-xs sm:text-sm font-semibold text-foreground mb-3 flex items-center justify-between">
+                <span>{language === "bn" ? "পারফরম্যান্স গ্রাফ" : "Performance Chart"}</span>
+                {chartData.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    {language === "bn" ? `${chartData.length} সেকেন্ড` : `${chartData.length}s`}
+                  </span>
+                )}
               </div>
               {chartData.length ? (
-                <div className="h-[180px]">
+                <div className="h-[200px] sm:h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 6, right: 12, bottom: 0, left: -8 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                      <XAxis dataKey="t" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                      <YAxis tick={{ fontSize: 10 }} width={28} />
+                    <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                      <defs>
+                        <linearGradient id="colorWpm" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorRaw" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis 
+                        dataKey="t" 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                        stroke="hsl(var(--border))"
+                        label={{ value: language === "bn" ? "সময় (সে)" : "Time (s)", position: 'insideBottom', offset: -5, fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                        stroke="hsl(var(--border))"
+                        width={35}
+                        label={{ value: 'WPM', angle: -90, position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      />
                       <Tooltip
                         contentStyle={{
-                          background: "hsl(var(--background))",
+                          backgroundColor: "hsl(var(--popover))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: 8,
                           fontSize: 12,
+                          padding: "8px 12px",
                         }}
-                        labelFormatter={(l) => `${l}s`}
+                        labelStyle={{ fontWeight: 'bold', marginBottom: 4 }}
+                        labelFormatter={(l) => `${language === "bn" ? "সময়:" : "Time:"} ${l}s`}
+                        formatter={(value: any, name: string) => {
+                          const label = name === 'wpm' ? 'WPM' : (language === "bn" ? "রও" : "Raw");
+                          return [value, label];
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="raw"
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeWidth={1.5}
+                        dot={false}
+                        fill="url(#colorRaw)"
+                        name="raw"
+                        connectNulls
                       />
                       <Line
                         type="monotone"
                         dataKey="wpm"
                         stroke="hsl(var(--primary))"
+                        strokeWidth={2.5}
                         dot={false}
-                        strokeWidth={2}
+                        fill="url(#colorWpm)"
+                        name="wpm"
+                        connectNulls
                       />
-                      <Line type="monotone" dataKey="raw" stroke="hsl(var(--muted-foreground))" dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">{language === "bn" ? "গ্রাফ নেই" : "No chart"}</div>
+                <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+                  {language === "bn" ? "গ্রাফ ডেটা উপলব্ধ নেই" : "No chart data available"}
+                </div>
               )}
 
-              {history10.length ? (
-                <div className="mt-4">
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    {language === "bn" ? "শেষ ১০ রান" : "Last 10 runs"}
+              {history10.length > 0 ? (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="text-xs sm:text-sm font-semibold text-foreground mb-3 flex items-center justify-between">
+                    <span>{language === "bn" ? "সাম্প্রতিক ইতিহাস" : "Recent History"}</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">
+                      {language === "bn" ? `${history10.length} রান` : `${history10.length} runs`}
+                    </span>
                   </div>
-                  <div className="h-[120px]">
+                  <div className="h-[140px] sm:h-[160px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={history10} margin={{ top: 6, right: 12, bottom: 0, left: -8 }}>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                        <XAxis dataKey="run" tick={{ fontSize: 10 }} />
-                        <YAxis tick={{ fontSize: 10 }} width={28} />
+                      <LineChart data={history10} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                        <defs>
+                          <linearGradient id="colorHistoryWpm" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                        <XAxis 
+                          dataKey="run" 
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          stroke="hsl(var(--border))"
+                          label={{ value: language === "bn" ? "রান #" : "Run #", position: 'insideBottom', offset: -5, fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          stroke="hsl(var(--border))"
+                          width={35}
+                          label={{ value: 'WPM', angle: -90, position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        />
                         <Tooltip
                           contentStyle={{
-                            background: "hsl(var(--background))",
+                            backgroundColor: "hsl(var(--popover))",
                             border: "1px solid hsl(var(--border))",
                             borderRadius: 8,
                             fontSize: 12,
+                            padding: "8px 12px",
                           }}
-                          labelFormatter={(l) => `run ${l}`}
+                          labelStyle={{ fontWeight: 'bold', marginBottom: 4 }}
+                          labelFormatter={(l) => `${language === "bn" ? "রান" : "Run"} #${l}`}
+                          formatter={(value: any, name: string) => {
+                            const label = name === 'wpm' ? 'WPM' : name === 'acc' ? (language === "bn" ? "নির্ভুলতা" : "Accuracy") : name;
+                            return [value, label];
+                          }}
                         />
-                        <Line type="monotone" dataKey="wpm" stroke="hsl(var(--primary))" dot={false} strokeWidth={2} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="wpm" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 3 }}
+                          activeDot={{ r: 5 }}
+                          fill="url(#colorHistoryWpm)"
+                          name="wpm"
+                        />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>

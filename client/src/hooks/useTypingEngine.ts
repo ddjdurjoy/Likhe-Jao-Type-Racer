@@ -280,7 +280,10 @@ export function useTypingEngine({
 
   const calculateWpmAndRaw = useCallback(
     (secs: number, final: boolean, withDecimalPoints?: boolean) => {
-      const testSeconds = Math.max(0.001, secs);
+      // For live calculations, ensure minimum 1 second to prevent unrealistic spikes
+      // For final calculations, use minimum 0.1 second
+      const minSeconds = final ? 0.1 : 1.0;
+      const testSeconds = Math.max(minSeconds, secs);
       const chars = countChars(final);
 
       // Monkeytype effective WPM: only fully-correct words count (plus the trailing space after them).
@@ -316,9 +319,17 @@ export function useTypingEngine({
     if (now - lastSampleAtRef.current < 950) return;
     lastSampleAtRef.current = now;
 
+    // Don't sample if less than 1 second has elapsed (prevents unrealistic WPM spikes)
+    if (elapsedSeconds < 1) return;
+
     const { wpm, raw } = calculateWpmAndRaw(elapsedSeconds, false, false);
-    if (wpm > 0) wpmHistoryRef.current.push(wpm);
-    if (raw > 0) rawHistoryRef.current.push(raw);
+    
+    // Additional validation: cap at reasonable max values (500 WPM max, 1000 raw max)
+    const cappedWpm = Math.min(wpm, 500);
+    const cappedRaw = Math.min(raw, 1000);
+    
+    if (cappedWpm > 0 && cappedWpm <= 500) wpmHistoryRef.current.push(cappedWpm);
+    if (cappedRaw > 0 && cappedRaw <= 1000) rawHistoryRef.current.push(cappedRaw);
   }, [startTime, isFinished, elapsedSeconds, calculateWpmAndRaw]);
 
   useEffect(() => {
@@ -359,9 +370,8 @@ export function useTypingEngine({
 
   const getStats = useCallback((): TypingStats => {
     // Live WPM can be very jumpy in the first second (division by a tiny time).
-    // Clamp the denominator for *live* stats only; final results use exact time.
-    const secs = startTime ? Math.max(1, elapsedSeconds) : elapsedSeconds;
-    const { wpm, raw, chars } = calculateWpmAndRaw(secs, false, false);
+    // The calculateWpmAndRaw function now handles this internally with minSeconds
+    const { wpm, raw, chars } = calculateWpmAndRaw(elapsedSeconds, false, false);
     const acc = calculateAccuracy();
 
     // Keep TypingStats compatible: use Monkeytype effective correct chars and total typed chars.
