@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
-import { db } from '../../server/db';
+import { getDb } from '../_db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
@@ -26,9 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    if (!db) {
-      return res.status(500).json({ error: 'Database not configured' });
-    }
+    const db = getDb();
 
     // Check if username exists
     const [existingUser] = await db
