@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { db } from '../../server/db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
@@ -25,6 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
+    if (!db) {
+      return res.status(500).json({ error: 'Database not configured' });
+    }
+
     // Find user
     const [user] = await db
       .select()
@@ -32,12 +36,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .where(eq(users.username, username))
       .limit(1);
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Verify password
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
