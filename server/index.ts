@@ -3,15 +3,45 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { sessionMiddleware } from "./session";
+import cors from "cors";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Trust proxy for production (behind Render/Railway load balancer)
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
   }
 }
+
+// CORS configuration for production (Vercel frontend + Render backend)
+const allowedOrigins = [
+  "http://localhost:5000",
+  "http://localhost:5001", 
+  "https://likhe-jao-typeracer.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowed => origin.startsWith(allowed as string))) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Allow cookies
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 app.use(
   express.json({

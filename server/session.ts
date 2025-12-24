@@ -15,8 +15,13 @@ export const sessionMiddleware = session({
       : undefined,
   cookie: {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // For cross-origin setup (Vercel + Render), we need 'none' with secure
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production", // Required for sameSite: none
     maxAge: 1000 * 60 * 60 * 24 * 14, // 14 days
+    // Allow cross-domain cookies
+    domain: process.env.COOKIE_DOMAIN || undefined,
   },
+  // Set proxy trust for production
+  proxy: process.env.NODE_ENV === "production",
 });

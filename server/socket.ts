@@ -59,14 +59,26 @@ function getOrCreatePublicLobby(): RoomState {
 }
 
 export function setupSocket(httpServer: HTTPServer) {
+  const allowedOrigins = [
+    "http://localhost:5000",
+    "http://localhost:5001",
+    "https://likhe-jao-typeracer.vercel.app",
+    process.env.FRONTEND_URL,
+  ].filter(Boolean);
+
   const io = new Server(httpServer, {
     path: "/socket.io",
     cors: {
-      origin: [
-        "https://likhe-jao.vercel.app",
-        "https://*.vercel.app",
-        "http://localhost:5000",
-      ],
+      origin: (origin, callback) => {
+        // Allow requests with no origin
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.some(allowed => origin.startsWith(allowed as string))) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
