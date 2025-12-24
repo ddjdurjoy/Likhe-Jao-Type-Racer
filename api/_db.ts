@@ -1,40 +1,49 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
 import * as schema from "../shared/schema";
 
-let pool: Pool | null = null;
-let db: ReturnType<typeof drizzle<typeof schema>> | null = null;
+// Avoid importing Node-only modules at module load time in Vercel.
+// We dynamically import `pg` and `drizzle-orm/node-postgres` inside functions.
 
-export function getDb() {
-  if (db) return db;
+let pool: any | null = null;
+let db: any | null = null;
 
+async function createPool() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
 
-  pool = new Pool({
+  const pg = await import("pg");
+  const Pool = (pg as any).Pool;
+
+  // Neon requires SSL. This config works well on Vercel.
+  return new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
     max: 1,
   });
+}
+
+export function getDb() {
+  // Note: keep sync signature for existing handlers.
+  // If DB isn't initialized yet, we throw a clear error.
+  if (db) return db;
+  throw new Error("DB not initialized - call initDb() first");
+}
+
+export async function initDb() {
+  if (db) return db;
+
+  pool = await createPool();
+  const drizzleMod = await import("drizzle-orm/node-postgres");
+  const drizzle = (drizzleMod as any).drizzle;
 
   db = drizzle(pool, { schema });
   return db;
 }
 
 export async function pingDb() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    return { ok: false as const, error: "DATABASE_URL is not set" };
-  }
-
   try {
-    const p = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 1,
-    });
+    const p = await createPool();
     const client = await p.connect();
     const result = await client.query("select 1 as ok");
     client.release();
@@ -44,3 +53,4 @@ export async function pingDb() {
     return { ok: false as const, error: e?.message || String(e) };
   }
 }
+

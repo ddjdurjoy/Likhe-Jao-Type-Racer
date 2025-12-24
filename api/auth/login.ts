@@ -1,6 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as bcrypt from 'bcryptjs';
-import { getDb } from '../_db';
+import { initDb } from '../_db';
+
+export const config = {
+  runtime: "nodejs",
+};
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 
@@ -25,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    const db = getDb();
+    const db = await initDb();
 
     // Find user
     const [user] = await db
