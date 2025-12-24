@@ -10,28 +10,24 @@ import { GlobalBackground } from "@/components/ui/GlobalBackground";
 import { useEffect } from "react";
 import { useGameStore } from "@/lib/stores/gameStore";
 import Home from "@/pages/Home";
-import Race from "@/pages/Race";
+import LocalRace from "@/pages/LocalRace";
 import Practice from "@/pages/Practice";
 import Garage from "@/pages/Garage";
 import Leaderboard from "@/pages/Leaderboard";
 import Auth from "@/pages/Auth";
 import Player from "@/pages/Player";
-import Friends from "@/pages/Friends";
-import Racer from "@/pages/Racer";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/race" component={Race} />
+      <Route path="/local-race" component={LocalRace} />
       <Route path="/practice" component={Practice} />
       <Route path="/garage" component={Garage} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/auth" component={Auth} />
       <Route path="/player" component={Player} />
-      <Route path="/racer/:username" component={Racer} />
-      <Route path="/friends" component={Friends} />
       <Route component={NotFound} />
     </Switch>
   );

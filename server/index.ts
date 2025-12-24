@@ -100,8 +100,6 @@ app.use((req, res, next) => {
   await registerRoutes(httpServer, app);
   // health endpoint for checks
   app.get('/health', (_req, res) => res.status(200).send('ok'));
-  const { setupSocket } = await import("./socket");
-  setupSocket(httpServer);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

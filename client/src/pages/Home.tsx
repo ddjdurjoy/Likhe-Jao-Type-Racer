@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useGameStore, CARS } from "@/lib/stores/gameStore";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -20,11 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Play, Users, Trophy, Zap, Target } from "lucide-react";
+import { Play, Users, Trophy, Zap, Target, Wifi } from "lucide-react";
 import type { Difficulty, Language } from "@shared/schema";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
+  const isAuthed = !!me.data?.id;
+  
   const {
     username,
     setUsername,
@@ -83,6 +87,14 @@ export default function Home() {
     setLocation("/garage");
   };
 
+  const handleLocalRace = () => {
+    if (!isAuthed) {
+      setLocation("/auth");
+      return;
+    }
+    setLocation("/local-race");
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col">
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 sm:p-6 gap-6 sm:gap-8">
@@ -101,7 +113,7 @@ export default function Home() {
           <Button
             size="lg"
             className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
-            onClick={openRaceDialog}
+            onClick={handleLocalRace}
             data-testid="button-start-race"
           >
             <Play className="w-5 h-5 sm:w-6 sm:h-6" />

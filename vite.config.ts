@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { VitePWA } from "vite-plugin-pwa";
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -10,6 +11,14 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
+    nodePolyfills({
+      include: ['events', 'util', 'stream', 'buffer', 'process'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
     VitePWA({
       registerType: "prompt",
       includeAssets: [
@@ -157,6 +166,9 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
     },
+  },
+  define: {
+    global: 'globalThis',
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
