@@ -87,32 +87,32 @@ export function PracticeResults({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
       data-testid="practice-results"
       onMouseDown={(e) => {
         // allow click outside to close
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-w-4xl w-full max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <Card className="p-6 md:p-8">
-          <div className="flex items-start justify-between gap-4">
+      <div className="max-w-4xl w-full max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <Card className="p-4 sm:p-6 md:p-8">
+          <div className="flex items-start justify-between gap-2 sm:gap-4">
             <div>
-              <h2 className="text-xl font-semibold">{language === "bn" ? "ফলাফল" : "Results"}</h2>
-              <div className="text-sm text-muted-foreground">{subtitle}</div>
+              <h2 className="text-lg sm:text-xl font-semibold">{language === "bn" ? "ফলাফল" : "Results"}</h2>
+              <div className="text-xs sm:text-sm text-muted-foreground">{subtitle}</div>
             </div>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} size="sm" className="shrink-0">
               {language === "bn" ? "বন্ধ" : "Close"}
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 mt-4 sm:mt-6">
             <ResultStat label="WPM" value={result.wpm} highlight badge={newPb ? (language === "bn" ? "নতুন PB" : "NEW PB") : undefined} />
-            <ResultStat label="RAW" value={result.rawWpm} />
-            <ResultStat label="ACC" value={`${result.accuracy}%`} />
-            <ResultStat label="CONS" value={`${result.consistency}%`} />
-            <ResultStat label="ERR" value={err} />
-            <ResultStat label="TIME" value={`${result.timeSeconds}s`} />
+            <ResultStat label={language === "bn" ? "র" : "Raw"} value={result.rawWpm} />
+            <ResultStat label={language === "bn" ? "নির্ভুলতা" : "Accuracy"} value={`${result.accuracy}%`} />
+            <ResultStat label={language === "bn" ? "সামঞ্জস্য" : "Consistency"} value={`${result.consistency}%`} />
+            <ResultStat label={language === "bn" ? "ত্রুটি" : "Errors"} value={err} />
+            <ResultStat label={language === "bn" ? "সময়" : "Time"} value={`${result.timeSeconds}s`} />
           </div>
 
           {pb !== null && (
@@ -126,8 +126,8 @@ export function PracticeResults({
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-card-border p-4">
+          <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+            <div className="rounded-lg border border-card-border p-3 sm:p-4">
               <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                 {language === "bn" ? "গ্রাফ" : "Chart"}
               </div>
@@ -190,17 +190,17 @@ export function PracticeResults({
               ) : null}
             </div>
 
-            <div className="rounded-lg border border-card-border p-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+            <div className="rounded-lg border border-card-border p-3 sm:p-4">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide mb-2">
                 {language === "bn" ? "ডিটেইলস" : "Details"}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                  <div className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">
                     {language === "bn" ? "ক্যারেক্টারস" : "Characters"}
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm tabular-nums">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm tabular-nums">
                     <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.correctWordChars + result.correctSpaces)} />
                     <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.incorrectChars)} />
                     <ErrorRow label={language === "bn" ? "মিস" : "Missed"} value={Math.round(result.missedChars)} />
@@ -211,10 +211,10 @@ export function PracticeResults({
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                  <div className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">
                     {language === "bn" ? "কিস্ট্রোকস" : "Keystrokes"}
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm tabular-nums">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm tabular-nums">
                     <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.accuracyCorrect)} />
                     <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.accuracyIncorrect)} />
                   </div>
@@ -229,11 +229,11 @@ export function PracticeResults({
           </div>
 
           {result.wordResults?.length ? (
-            <div className="mt-4 rounded-lg border border-card-border p-4">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+            <div className="mt-3 sm:mt-4 rounded-lg border border-card-border p-3 sm:p-4">
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide mb-2">
                 {language === "bn" ? "শব্দ" : "Words"}
               </div>
-              <div className="flex flex-wrap gap-2 leading-none">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 leading-none">
                 {result.wordResults.slice(0, 250).map((w, idx) => (
                   <WordPill key={idx} w={w} />
                 ))}
@@ -247,20 +247,20 @@ export function PracticeResults({
           ) : null}
 
           {!isAuthed ? (
-            <div className="mt-6 rounded-lg border border-card-border p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="text-xs text-muted-foreground">
+            <div className="mt-4 sm:mt-6 rounded-lg border border-card-border p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+              <div className="text-[10px] sm:text-xs text-muted-foreground">
                 {language === "bn"
                   ? "স্ট্যাটস সেভ করতে হলে সাইন আপ / লগইন করতে হবে।"
                   : "To save your stats, you need to sign up / log in."}
               </div>
-              <Button variant="outline" size="sm" onClick={onGoToAuth}>
+              <Button variant="outline" size="sm" onClick={onGoToAuth} className="shrink-0">
                 {language === "bn" ? "সাইন আপ / লগইন" : "Sign up / Log in"}
               </Button>
             </div>
           ) : null}
 
-          <div className="mt-3 flex flex-col sm:flex-row gap-3">
-            <Button className="flex-1" onClick={onRestart}>
+          <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button className="flex-1" onClick={onRestart} size="sm">
               {language === "bn" ? "আবার" : "Restart"}
             </Button>
 
@@ -270,11 +270,12 @@ export function PracticeResults({
               onClick={() => setIsReplayOpen(true)}
               disabled={!result.replay?.events?.length}
               title={!result.replay?.events?.length ? "Replay not available" : undefined}
+              size="sm"
             >
               {language === "bn" ? "রিপ্লে দেখুন" : "Watch replay"}
             </Button>
 
-            <Button className="flex-1" variant="outline" onClick={onContinue}>
+            <Button className="flex-1" variant="outline" onClick={onContinue} size="sm">
               {language === "bn" ? "চালিয়ে যান" : "Continue"}
             </Button>
           </div>
@@ -304,14 +305,14 @@ function ResultStat({
   badge?: string;
 }) {
   return (
-    <div className={cn("rounded-lg p-3 border", highlight ? "border-primary/40" : "border-card-border")}>
-      <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className="flex items-center gap-2">
-        <div className={cn("text-2xl font-bold tabular-nums", highlight ? "text-primary" : "text-foreground")}>
+    <div className={cn("rounded-lg p-2 sm:p-3 border", highlight ? "border-primary/40" : "border-card-border")}>
+      <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className="flex items-center gap-1 sm:gap-2">
+        <div className={cn("text-lg sm:text-xl md:text-2xl font-bold tabular-nums", highlight ? "text-primary" : "text-foreground")}>
           {value}
         </div>
         {badge ? (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+          <span className="text-[8px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
             {badge}
           </span>
         ) : null}
@@ -335,7 +336,7 @@ function WordPill({ w }: { w: WordResult }) {
   return (
     <span
       className={cn(
-        "text-sm md:text-base px-2 py-1 rounded border tabular-nums",
+        "text-xs sm:text-sm md:text-base px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border tabular-nums",
         "font-medium",
         cls
       )}

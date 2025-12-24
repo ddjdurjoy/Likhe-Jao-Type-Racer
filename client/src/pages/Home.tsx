@@ -100,76 +100,76 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 w-full max-w-2xl px-2">
           <Button
             size="lg"
-            className="h-20 text-lg font-semibold gap-3"
+            className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
             onClick={openRaceDialog}
             data-testid="button-start-race"
           >
-            <Play className="w-6 h-6" />
+            <Play className="w-5 h-5 sm:w-6 sm:h-6" />
             {language === "bn" ? "রেস শুরু করুন" : "Start Race"}
           </Button>
 
           <Button
             size="lg"
             variant="outline"
-            className="h-20 text-lg font-semibold gap-3"
+            className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
             onClick={handlePractice}
             data-testid="button-practice"
           >
-            <Target className="w-6 h-6" />
+            <Target className="w-5 h-5 sm:w-6 sm:h-6" />
             {language === "bn" ? "অনুশীলন" : "Practice Mode"}
           </Button>
 
           <Button
             size="lg"
             variant="outline"
-            className="h-20 text-lg font-semibold gap-3"
+            className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
             onClick={handleGarage}
             data-testid="button-garage"
           >
-            <Zap className="w-6 h-6" />
+            <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
             {language === "bn" ? "গ্যারেজ" : "Garage"}
           </Button>
 
           <Button
             size="lg"
             variant="outline"
-            className="h-20 text-lg font-semibold gap-3"
+            className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
             onClick={handleLeaderboard}
             data-testid="button-leaderboard"
           >
-            <Trophy className="w-6 h-6" />
+            <Trophy className="w-5 h-5 sm:w-6 sm:h-6" />
             {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
           </Button>
         </div>
 
         {totalRaces > 0 && (
-          <div className="w-full max-w-2xl p-6 bg-transparent border border-card-border rounded-lg">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4 flex items-center gap-2">
+          <div className="w-full max-w-2xl p-4 sm:p-6 bg-transparent border border-card-border rounded-lg">
+            <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-3 sm:mb-4 flex items-center gap-2">
               <Users className="w-4 h-4" />
               {language === "bn" ? `${username || "আপনি"} এর পরিসংখ্যান` : `Stats of ${username || "Guest"}` }
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-primary">{totalRaces}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xl sm:text-2xl font-bold text-primary">{totalRaces}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
                   {language === "bn" ? "রেস" : "Races"}
                 </div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-success">{totalWins}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xl sm:text-2xl font-bold text-success">{totalWins}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
                   {language === "bn" ? "জয়" : "Wins"}
                 </div>
               </div>
               <div>
-                <div className="text-2xl font-bold">{Math.round(bestWpm)}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xl sm:text-2xl font-bold">{Math.round(bestWpm)}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
                   {language === "bn" ? "সেরা WPM" : "Best WPM"}
                 </div>
               </div>
               <div>
-                <div className="text-2xl font-bold">{Math.round(avgWpm)}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xl sm:text-2xl font-bold">{Math.round(avgWpm)}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground">
                   {language === "bn" ? "গড় WPM" : "Avg WPM"}
                 </div>
               </div>
@@ -177,9 +177,9 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex items-center gap-4 opacity-60">
+        <div className="flex items-center gap-3 sm:gap-4 opacity-60">
           <CarPreview carId={selectedCarId} size="sm" />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs sm:text-sm text-muted-foreground">
             {CARS[selectedCarId]?.name || "Your Car"}
           </span>
         </div>

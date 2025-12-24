@@ -296,9 +296,9 @@ export default function Practice() {
             onRestart={handleRestart}
           />
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="shrink-0">
-              <div className="flex items-center gap-6 text-sm tabular-nums text-muted-foreground">
+              <div className="flex items-center gap-3 sm:gap-6 text-xs sm:text-sm tabular-nums text-muted-foreground">
                 <div>
                   <span className="text-muted-foreground">wpm </span>
                   <span className="font-semibold text-foreground">{stats.wpm}</span>

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/lib/stores/gameStore";
+import { AlertTriangle } from "lucide-react";
 
 interface TypingInputProps {
   words: string[];
@@ -168,6 +169,7 @@ export function TypingInput({
   const caretAnchorRef = useRef<HTMLSpanElement | null>(null);
 
   const [lineHeight, setLineHeight] = useState(32);
+  const [capsLockOn, setCapsLockOn] = useState(false);
 
   // Tape scrolling state (Monkeytype-like line jump)
   const [baseOffsetPx, setBaseOffsetPx] = useState(0);
@@ -225,6 +227,40 @@ export function TypingInput({
   useEffect(() => {
     if (!disabled) inputRef.current?.focus();
   }, [disabled, inputRef]);
+
+  // CapsLock detection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.getModifierState && e.getModifierState("CapsLock")) {
+        setCapsLockOn(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.getModifierState && !e.getModifierState("CapsLock")) {
+        setCapsLockOn(false);
+      }
+    };
+
+    // Also detect on click events (some browsers don't fire keyboard events consistently)
+    const handleClick = () => {
+      const input = inputRef.current;
+      if (input && document.activeElement === input) {
+        // Small trick: check if a lowercase letter would be uppercase
+        // This doesn't work reliably, so we rely on keyboard events primarily
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("click", handleClick);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("click", handleClick);
+    };
+  }, [inputRef]);
 
   const onFocusArea = () => {
     if (!disabled) inputRef.current?.focus();
@@ -428,6 +464,18 @@ export function TypingInput({
 
   return (
     <div className="w-full" onClick={onFocusArea}>
+      {/* CapsLock Warning */}
+      {capsLockOn && !disabled && (
+        <div className="mb-3 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 animate-in fade-in slide-in-from-top-2 duration-200">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="text-sm font-medium">
+            {language === "bn" 
+              ? "ক্যাপস লক চালু আছে! এটি বন্ধ করুন।" 
+              : "Caps Lock is ON! Please turn it off."}
+          </span>
+        </div>
+      )}
+
       <div
         className={cn(
           "relative",

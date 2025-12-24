@@ -167,31 +167,36 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-2 sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="max-w-5xl w-full max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <Card className="p-6 md:p-8">
+      <div className="max-w-5xl w-full max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] overflow-y-auto">
+        <Card className="p-4 sm:p-6 md:p-8">
           {/* Header */}
-          <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
             <div>
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">
                 {language === "bn" ? "রিপ্লে" : "Watch Replay"}
               </h2>
-              <div className="text-sm text-muted-foreground tabular-nums mt-1">
+              <div className="text-xs sm:text-sm text-muted-foreground tabular-nums mt-1">
                 {formatTime(currentTime)} / {formatTime(totalTime)}
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
 
           {/* Text Display Area - Monkeytype Style */}
-          <div className="rounded-lg border border-border bg-card/30 p-8 mb-6 min-h-[240px] relative overflow-hidden">
-            <div className="text-2xl leading-relaxed font-mono flex flex-wrap gap-x-3 gap-y-2">
+          <div className="rounded-lg border border-border bg-card/30 p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 min-h-[160px] sm:min-h-[200px] md:min-h-[240px] relative overflow-hidden">
+            <div 
+              className="text-base sm:text-xl md:text-2xl leading-relaxed font-mono flex flex-wrap gap-x-2 sm:gap-x-3 gap-y-1.5 sm:gap-y-2 transition-transform duration-300 ease-out"
+              style={{
+                transform: `translateY(${calculateScrollOffset(currentWordIndex, displayWords.length)}px)`
+              }}
+            >
               {displayWords.map((word, idx) => (
                 <WordDisplay
                   key={idx}
@@ -203,7 +208,7 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
           </div>
 
           {/* Progress Slider */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Slider
               value={[progress]}
               onValueChange={handleSeek}
@@ -211,9 +216,9 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
               step={0.1}
               className="cursor-pointer"
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+            <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground mt-2">
               <span>{formatTime(currentTime)}</span>
-              <span>
+              <span className="hidden sm:inline">
                 {language === "bn" ? "ঘটনা" : "Event"} {eventIndex + 1} / {events.length}
               </span>
               <span>{formatTime(totalTime)}</span>
@@ -221,13 +226,14 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4">
             <Button
               variant="outline"
               size="icon"
               onClick={handleStepBack}
               disabled={eventIndex === 0}
               title={language === "bn" ? "পিছনে (j/←)" : "Step back (j/←)"}
+              className="shrink-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -236,16 +242,19 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
               className="flex-1"
               onClick={handlePlayPause}
               disabled={events.length === 0}
+              size="sm"
             >
               {isPlaying ? (
                 <>
-                  <Pause className="h-4 w-4 mr-2" />
-                  {language === "bn" ? "পজ (space/k)" : "Pause (space/k)"}
+                  <Pause className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{language === "bn" ? "পজ (space/k)" : "Pause (space/k)"}</span>
+                  <span className="sm:hidden">{language === "bn" ? "পজ" : "Pause"}</span>
                 </>
               ) : (
                 <>
-                  <Play className="h-4 w-4 mr-2" />
-                  {language === "bn" ? "প্লে (space/k)" : "Play (space/k)"}
+                  <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{language === "bn" ? "প্লে (space/k)" : "Play (space/k)"}</span>
+                  <span className="sm:hidden">{language === "bn" ? "প্লে" : "Play"}</span>
                 </>
               )}
             </Button>
@@ -256,6 +265,7 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
               onClick={handleStepForward}
               disabled={eventIndex >= events.length - 1}
               title={language === "bn" ? "এগিয়ে (l/→)" : "Step forward (l/→)"}
+              className="shrink-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -265,25 +275,38 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
               onClick={handleRestart}
               disabled={events.length === 0}
               title={language === "bn" ? "রিস্টার্ট (r)" : "Restart (r)"}
+              size="sm"
+              className="hidden sm:flex"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               {language === "bn" ? "রিস্টার্ট" : "Restart"}
             </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRestart}
+              disabled={events.length === 0}
+              title={language === "bn" ? "রিস্টার্ট (r)" : "Restart (r)"}
+              className="sm:hidden shrink-0"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Speed Control */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               {language === "bn" ? "গতি:" : "Speed:"}
             </span>
-            <div className="flex gap-2 flex-1">
+            <div className="flex gap-1 sm:gap-2 flex-1 overflow-x-auto">
               {[0.25, 0.5, 0.75, 1, 1.5, 2, 3].map((speed) => (
                 <Button
                   key={speed}
                   variant={playbackSpeed === speed ? "default" : "outline"}
                   size="sm"
                   onClick={() => setPlaybackSpeed(speed)}
-                  className="flex-1"
+                  className="flex-1 min-w-[44px] text-xs sm:text-sm px-2"
                 >
                   {speed}x
                 </Button>
@@ -292,15 +315,15 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
           </div>
 
           {/* Keyboard Shortcuts */}
-          <div className="mt-4 p-3 rounded-lg bg-muted/30 text-xs text-muted-foreground">
+          <div className="mt-4 p-2 sm:p-3 rounded-lg bg-muted/30 text-[10px] sm:text-xs text-muted-foreground">
             <div className="font-semibold mb-1">
               {language === "bn" ? "কীবোর্ড শর্টকাট:" : "Keyboard shortcuts:"}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div><kbd className="px-1.5 py-0.5 rounded bg-background border">space</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border">k</kbd> play/pause</div>
-              <div><kbd className="px-1.5 py-0.5 rounded bg-background border">←</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border">j</kbd> step back</div>
-              <div><kbd className="px-1.5 py-0.5 rounded bg-background border">→</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-background border">l</kbd> step forward</div>
-              <div><kbd className="px-1.5 py-0.5 rounded bg-background border">r</kbd> restart</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1 sm:gap-2">
+              <div><kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">space</kbd> / <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">k</kbd> play/pause</div>
+              <div><kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">←</kbd> / <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">j</kbd> step back</div>
+              <div><kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">→</kbd> / <kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">l</kbd> step forward</div>
+              <div><kbd className="px-1 sm:px-1.5 py-0.5 rounded bg-background border text-[9px] sm:text-[10px]">r</kbd> restart</div>
             </div>
           </div>
         </Card>
@@ -383,4 +406,20 @@ function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
   const milliseconds = ms % 1000;
   return `${seconds}.${Math.floor(milliseconds / 100)}s`;
+}
+
+function calculateScrollOffset(currentWordIndex: number, totalWords: number): number {
+  // Keep the active word in view, scroll smoothly
+  // Show ~3 lines at once, scroll by line height
+  const wordsPerLine = 8; // approximate
+  const lineHeight = 48; // approximate height of one line with leading-relaxed
+  const currentLine = Math.floor(currentWordIndex / wordsPerLine);
+  const linesToShow = 3;
+  
+  // Start scrolling when we're past the 2nd line
+  if (currentLine <= 1) return 0;
+  
+  // Scroll up to keep current line in the middle
+  const scrolledLines = currentLine - 1;
+  return -scrolledLines * lineHeight;
 }

@@ -519,17 +519,21 @@ export function useTypingEngine({
     if (!timeLimitSeconds || timeLimitSeconds <= 0) return;
     if (!startTime || isFinished) return;
 
-    const id = window.setInterval(() => {
+    const checkTimeLimit = () => {
       const secs = (Date.now() - startTime) / 1000;
       if (secs >= timeLimitSeconds) {
         if (stopOnWordEnd) {
           // mark end time but don't finish until space submits the word
           setEndTime(startTime + timeLimitSeconds * 1000);
         } else {
+          // Finish immediately when time runs out
+          clearInterval(id);
           finish("time");
         }
       }
-    }, 100);
+    };
+
+    const id = window.setInterval(checkTimeLimit, 50); // Check more frequently for accuracy
 
     return () => window.clearInterval(id);
   }, [mode, timeLimitSeconds, startTime, isFinished, finish, stopOnWordEnd]);
@@ -568,6 +572,12 @@ export function useTypingEngine({
       if (!enabled || isFinished) return;
 
       soundManager.resumeContext();
+
+      // In time mode with stopOnWordEnd=false, prevent any input after time is up
+      if (mode === "time" && !stopOnWordEnd && timeLimitSeconds && elapsedSeconds >= timeLimitSeconds) {
+        e.preventDefault();
+        return;
+      }
 
       if (e.key === "Backspace") {
         soundManager.playBackspace();
@@ -689,6 +699,11 @@ export function useTypingEngine({
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!enabled || isFinished) return;
+
+      // In time mode with stopOnWordEnd=false, prevent any input after time is up
+      if (mode === "time" && !stopOnWordEnd && timeLimitSeconds && elapsedSeconds >= timeLimitSeconds) {
+        return;
+      }
 
       const value = e.target.value;
 
