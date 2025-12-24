@@ -72,6 +72,27 @@ input, textarea { caret-color: hsl(var(--primary)); }
 @tailwind components;
 @tailwind utilities;
 
+/* Monkeytype-like smooth caret */
+@keyframes ljCaretFlashSmooth {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.typing-caret {
+  transform-origin: top left;
+  will-change: transform, height, opacity;
+  animation: ljCaretFlashSmooth 1s infinite;
+  transition: transform 0.12s cubic-bezier(0.37, 0, 0.63, 1),
+    height 0.12s cubic-bezier(0.37, 0, 0.63, 1),
+    opacity 0.12s linear;
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);

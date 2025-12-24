@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { registerAuthRoutes } from "./authRoutes";
 import { registerFriendRoutes } from "./friendRoutes";
+import { registerPracticeLeaderboardRoutes } from "./practiceLeaderboardRoutes";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -17,6 +18,7 @@ export async function registerRoutes(
 
   registerAuthRoutes(app);
   registerFriendRoutes(app);
+  registerPracticeLeaderboardRoutes(app);
 
   app.get("/api/users/:id", async (req, res) => {
     try {

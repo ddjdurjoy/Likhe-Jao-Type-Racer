@@ -187,6 +187,7 @@ export function registerAuthRoutes(app: Express) {
       firstName: z.string().max(50).nullable().optional(),
       lastName: z.string().max(50).nullable().optional(),
       email: z.string().email().max(200).nullable().optional(),
+      country: z.string().max(2).nullable().optional(), // ISO-2 like "BD"
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
@@ -197,6 +198,7 @@ export function registerAuthRoutes(app: Express) {
     const updates: any = {};
     if (parsed.data.firstName !== undefined) updates.firstName = parsed.data.firstName ? parsed.data.firstName.trim() : null;
     if (parsed.data.lastName !== undefined) updates.lastName = parsed.data.lastName ? parsed.data.lastName.trim() : null;
+    if (parsed.data.country !== undefined) updates.country = parsed.data.country ? parsed.data.country.trim().toUpperCase() : null;
 
     if (parsed.data.email !== undefined) {
       const nextEmail = parsed.data.email ? parsed.data.email.trim().toLowerCase() : null;

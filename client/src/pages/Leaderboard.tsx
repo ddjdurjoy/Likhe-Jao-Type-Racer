@@ -4,21 +4,52 @@ import { useQuery } from "@tanstack/react-query";
 import { useGameStore } from "@/lib/stores/gameStore";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Medal, Award, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@shared/schema";
 
+type PracticeLeaderboardRow = {
+  rank: number;
+  username: string;
+  wpm: number;
+  rawWpm: number;
+  accuracy: number;
+  consistency: number;
+  errors: number;
+  timeSeconds: number;
+  country: string | null;
+};
+
 import { AnimatedBackground } from "@/components/game/AnimatedBackground";
 
 export default function Leaderboard() {
   const [, setLocation] = useLocation();
   const { language, username, totalRaces, totalWins, bestWpm, totalAccuracy } = useGameStore();
-  const [activeTab, setActiveTab] = useState("alltime");
+  const [activeTab, setActiveTab] = useState<"alltime" | "weekly" | "daily" | "practice">("alltime");
+  const handleTabChange = (value: string) => setActiveTab(value as any);
+
+  const [practiceTime, setPracticeTime] = useState<15 | 30 | 60 | 120>(30);
+  const [practiceCountry, setPracticeCountry] = useState("BD");
 
   const { data: leaderboardData, isLoading, isError } = useQuery<LeaderboardEntry[]>({
-    queryKey: ["/api/leaderboard", activeTab],
+    queryKey: [`/api/leaderboard?period=${activeTab}`],
+    enabled: activeTab !== "practice",
+  });
+
+  const {
+    data: practiceLeaderboard,
+    isLoading: isLoadingPractice,
+    isError: isErrorPractice,
+  } = useQuery<PracticeLeaderboardRow[]>({
+    queryKey: [
+      `/api/practice/leaderboard?timeSeconds=${practiceTime}&country=${encodeURIComponent(
+        practiceCountry
+      )}&language=${language}`,
+    ],
+    enabled: activeTab === "practice",
   });
 
 
@@ -59,8 +90,8 @@ export default function Leaderboard() {
 
       <main className="relative z-10 flex-1 p-4 sm:p-6">
         <div className="max-w-3xl mx-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-3 w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+            <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="alltime" data-testid="tab-alltime">
                 {language === "bn" ? "সর্বকালের" : "All-Time"}
               </TabsTrigger>
@@ -69,6 +100,9 @@ export default function Leaderboard() {
               </TabsTrigger>
               <TabsTrigger value="daily" data-testid="tab-daily">
                 {language === "bn" ? "দৈনিক" : "Daily"}
+              </TabsTrigger>
+              <TabsTrigger value="practice" data-testid="tab-practice">
+                {language === "bn" ? "প্র্যাকটিস" : "Practice"}
               </TabsTrigger>
             </TabsList>
 
@@ -114,6 +148,43 @@ export default function Leaderboard() {
                   getRankIcon={getRankIcon}
                   getRankClass={getRankClass}
                 />
+              )}
+            </TabsContent>
+
+            <TabsContent value="practice" className="space-y-4">
+              <Card className="p-4 flex flex-wrap items-center gap-2">
+                <div className="text-sm text-muted-foreground">
+                  {language === "bn" ? "সময়" : "Time"}
+                </div>
+                {[15, 30, 60, 120].map((t) => (
+                  <Button
+                    key={t}
+                    variant={practiceTime === t ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPracticeTime(t as any)}
+                  >
+                    {t}s
+                  </Button>
+                ))}
+
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Country</span>
+                  <Input
+                    value={practiceCountry}
+                    onChange={(e) => setPracticeCountry(e.target.value.toUpperCase())}
+                    maxLength={2}
+                    className="h-8 w-20"
+                    placeholder="BD"
+                  />
+                </div>
+              </Card>
+
+              {isLoadingPractice ? (
+                <LeaderboardSkeleton />
+              ) : isErrorPractice ? (
+                <LeaderboardError language={language} />
+              ) : (
+                <PracticeLeaderboardTable entries={practiceLeaderboard || []} language={language} />
               )}
             </TabsContent>
           </Tabs>
@@ -229,6 +300,59 @@ interface LeaderboardTableProps {
   getRankClass: (rank: number) => string;
 }
 
+function PracticeLeaderboardTable({
+  entries,
+  language,
+}: {
+  entries: PracticeLeaderboardRow[];
+  language: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="overflow-x-auto no-scrollbar">
+        <div className="min-w-[760px]">
+          <div className="grid grid-cols-7 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div>{language === "bn" ? "র‍্যাঙ্ক" : "Rank"}</div>
+            <div className="col-span-2">{language === "bn" ? "প্লেয়ার" : "Player"}</div>
+            <div className="text-right">WPM</div>
+            <div className="text-right">RAW</div>
+            <div className="text-right">Acc</div>
+            <div className="text-right">Err</div>
+          </div>
+
+          {entries.map((e) => (
+            <div
+              key={e.rank}
+              className="grid grid-cols-7 gap-4 px-4 py-3 rounded-lg border border-transparent transition-colors hover-elevate"
+            >
+              <div className="font-bold">{e.rank}</div>
+              <div className="col-span-2 font-medium truncate">{e.username}</div>
+              <div className="text-right font-bold text-primary">{e.wpm}</div>
+              <div className="text-right">{e.rawWpm}</div>
+              <div className="text-right">{e.accuracy}%</div>
+              <div className="text-right">{e.errors}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {entries.length === 0 && (
+        <Card className="p-8 text-center">
+          <Trophy className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+          <h3 className="font-heading font-semibold mb-2">
+            {language === "bn" ? "কোন প্র্যাকটিস স্কোর নেই" : "No Practice Scores Yet"}
+          </h3>
+          <p className="text-muted-foreground text-sm mb-4">
+            {language === "bn"
+              ? "৯৫%+ নির্ভুলতায় ১৫/৩০/৬০/১২০ সেকেন্ড টাইম টেস্ট শেষ করুন।"
+              : "Finish a 15/30/60/120s time test with 95%+ accuracy to enter the leaderboard."}
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function LeaderboardTable({
   entries,
   language,
@@ -237,33 +361,37 @@ function LeaderboardTable({
 }: LeaderboardTableProps) {
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-6 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        <div>{language === "bn" ? "র‍্যাঙ্ক" : "Rank"}</div>
-        <div className="col-span-2">{language === "bn" ? "প্লেয়ার" : "Player"}</div>
-        <div className="text-right">WPM</div>
-        <div className="text-right">{language === "bn" ? "নির্ভুলতা" : "Acc"}</div>
-        <div className="text-right">{language === "bn" ? "জয়" : "Wins"}</div>
-      </div>
-
-      {entries.map((entry) => (
-        <div
-          key={entry.rank}
-          className={cn(
-            "grid grid-cols-6 gap-4 px-4 py-3 rounded-lg border border-transparent transition-colors hover-elevate",
-            getRankClass(entry.rank)
-          )}
-          data-testid={`leaderboard-row-${entry.rank}`}
-        >
-          <div className="flex items-center gap-2">
-            {getRankIcon(entry.rank)}
-            <span className="font-bold">{entry.rank}</span>
+      <div className="overflow-x-auto no-scrollbar">
+        <div className="min-w-[680px]">
+          <div className="grid grid-cols-6 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div>{language === "bn" ? "র‍্যাঙ্ক" : "Rank"}</div>
+            <div className="col-span-2">{language === "bn" ? "প্লেয়ার" : "Player"}</div>
+            <div className="text-right">WPM</div>
+            <div className="text-right">{language === "bn" ? "নির্ভুলতা" : "Acc"}</div>
+            <div className="text-right">{language === "bn" ? "জয়" : "Wins"}</div>
           </div>
-          <div className="col-span-2 font-medium truncate">{entry.username}</div>
-          <div className="text-right font-bold text-primary">{entry.wpm}</div>
-          <div className="text-right">{entry.accuracy}%</div>
-          <div className="text-right text-success">{entry.wins}</div>
+
+          {entries.map((entry) => (
+            <div
+              key={entry.rank}
+              className={cn(
+                "grid grid-cols-6 gap-4 px-4 py-3 rounded-lg border border-transparent transition-colors hover-elevate",
+                getRankClass(entry.rank)
+              )}
+              data-testid={`leaderboard-row-${entry.rank}`}
+            >
+              <div className="flex items-center gap-2">
+                {getRankIcon(entry.rank)}
+                <span className="font-bold">{entry.rank}</span>
+              </div>
+              <div className="col-span-2 font-medium truncate">{entry.username}</div>
+              <div className="text-right font-bold text-primary">{entry.wpm}</div>
+              <div className="text-right">{entry.accuracy}%</div>
+              <div className="text-right text-success">{entry.wins}</div>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
     </div>
   );
 }

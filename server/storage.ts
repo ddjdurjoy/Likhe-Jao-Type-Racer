@@ -7,6 +7,8 @@ import type {
   RaceResult,
   InsertRaceResult,
   LeaderboardEntry,
+  PracticeResult,
+  InsertPracticeResult,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -39,6 +41,32 @@ export interface IStorage {
   getAllRaceResults(limit?: number): Promise<RaceResult[]>;
 
   getLeaderboard(limit?: number, period?: "all" | "weekly" | "daily"): Promise<LeaderboardEntry[]>;
+
+  // practice leaderboard
+  createPracticeResult(result: InsertPracticeResult): Promise<PracticeResult>;
+  getPracticeBest(opts: {
+    userId: string;
+    timeSeconds: number;
+    language: "en" | "bn";
+  }): Promise<PracticeResult | undefined>;
+  getPracticeLeaderboard(opts: {
+    limit: number;
+    timeSeconds: number;
+    country: string;
+    language: string;
+  }): Promise<
+    Array<{
+      rank: number;
+      username: string;
+      wpm: number;
+      rawWpm: number;
+      accuracy: number;
+      consistency: number;
+      errors: number;
+      timeSeconds: number;
+      country: string | null;
+    }>
+  >;
 }
 
 export class MemStorage implements IStorage {
@@ -47,11 +75,13 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private playerStats: Map<string, PlayerStats>;
   private raceResults: Map<string, RaceResult>;
+  private practiceResults: Map<string, PracticeResult>;
 
   constructor() {
     this.users = new Map();
     this.playerStats = new Map();
     this.raceResults = new Map();
+    this.practiceResults = new Map();
     this.friendRequests = new Map();
     this.friends = new Map();
     this.seedLeaderboard();
@@ -366,6 +396,113 @@ export class MemStorage implements IStorage {
       accuracy: Math.round((stats.accuracy ?? 0) * 10) / 10,
       races: stats.totalRaces ?? 0,
       wins: stats.wins ?? 0,
+    }));
+  }
+
+  async createPracticeResult(insertResult: InsertPracticeResult): Promise<PracticeResult> {
+    const id = randomUUID();
+    const result: PracticeResult = {
+      id,
+      userId: (insertResult as any).userId,
+      mode: (insertResult as any).mode,
+      timeSeconds: (insertResult as any).timeSeconds,
+      wpm: (insertResult as any).wpm,
+      rawWpm: (insertResult as any).rawWpm,
+      accuracy: (insertResult as any).accuracy,
+      consistency: (insertResult as any).consistency,
+      errors: (insertResult as any).errors,
+      language: (insertResult as any).language,
+      createdAt: new Date(),
+    } as any;
+    this.practiceResults.set(id, result);
+    return result;
+  }
+
+  async getPracticeBest(opts: {
+    userId: string;
+    timeSeconds: number;
+    language: "en" | "bn";
+  }): Promise<PracticeResult | undefined> {
+    const all = Array.from(this.practiceResults.values()).filter(
+      (r) =>
+        r.userId === opts.userId &&
+        r.mode === "time" &&
+        r.timeSeconds === opts.timeSeconds &&
+        r.language === opts.language
+    );
+    all.sort((a, b) => (b.wpm ?? 0) - (a.wpm ?? 0));
+    return all[0];
+  }
+
+  async getPracticeLeaderboard(opts: {
+    limit: number;
+    timeSeconds: number;
+    country: string;
+    language: string;
+  }): Promise<
+    Array<{
+      rank: number;
+      username: string;
+      wpm: number;
+      rawWpm: number;
+      accuracy: number;
+      consistency: number;
+      errors: number;
+      timeSeconds: number;
+      country: string | null;
+    }>
+  > {
+    const { limit, timeSeconds, country, language } = opts;
+
+    // best WPM per user for this bucket
+    const bestByUser = new Map<
+      string,
+      { wpm: number; rawWpm: number; accuracy: number; consistency: number; errors: number }
+    >();
+
+    for (const r of this.practiceResults.values()) {
+      if ((r as any).mode !== "time") continue;
+      if ((r as any).timeSeconds !== timeSeconds) continue;
+      if ((r as any).language !== language) continue;
+
+      const user = await this.getUser((r as any).userId);
+      const userCountry = (user as any)?.country ? String((user as any).country).toUpperCase() : null;
+      if (!userCountry || userCountry !== country.toUpperCase()) continue;
+
+      const prev = bestByUser.get((r as any).userId);
+      if (!prev || (r as any).wpm > prev.wpm) {
+        bestByUser.set((r as any).userId, {
+          wpm: (r as any).wpm,
+          rawWpm: (r as any).rawWpm,
+          accuracy: (r as any).accuracy,
+          consistency: (r as any).consistency,
+          errors: (r as any).errors,
+        });
+      }
+    }
+
+    const rows: Array<any> = [];
+    for (const [userId, best] of bestByUser.entries()) {
+      const user = await this.getUser(userId);
+      rows.push({
+        userId,
+        username: user?.username || "Unknown",
+        ...best,
+      });
+    }
+
+    rows.sort((a, b) => b.wpm - a.wpm);
+
+    return rows.slice(0, limit).map((r, i) => ({
+      rank: i + 1,
+      username: r.username,
+      wpm: Math.round(r.wpm),
+      rawWpm: Math.round(r.rawWpm),
+      accuracy: Math.round(r.accuracy * 10) / 10,
+      consistency: Math.round(r.consistency * 10) / 10,
+      errors: r.errors,
+      timeSeconds,
+      country: country.toUpperCase(),
     }));
   }
 }

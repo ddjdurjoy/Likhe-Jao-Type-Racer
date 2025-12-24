@@ -7,7 +7,8 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
-import { Download, Settings, UserRound } from "lucide-react";
+import { Download, Settings, UserRound, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ export function AppHeader() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("");
   const [verifyToken, setVerifyToken] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -40,6 +42,7 @@ export function AppHeader() {
     setFirstName(me.data.firstName || "");
     setLastName(me.data.lastName || "");
     setEmail(me.data.email || "");
+    setCountry(me.data.country || "");
   }, [me.data]);
 
   const needsEmailVerify = useMemo(() => !!me.data?.email && !me.data?.emailVerifiedAt, [me.data]);
@@ -70,7 +73,8 @@ export function AppHeader() {
       const res = await apiRequest("PATCH", "/api/auth/settings/account", {
         firstName: firstName.trim() ? firstName.trim() : null,
         lastName: lastName.trim() ? lastName.trim() : null,
-        email: email.trim() ? email.trim() : null,
+        email: email.trim() ? email.trim().toLowerCase() : null,
+        country: country.trim() ? country.trim().toUpperCase() : null,
       });
       return res.json();
     },
@@ -140,8 +144,73 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-transparent">
       <div className="flex items-center justify-between gap-2 p-3 sm:p-4 sm:px-6">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <HeaderLogo size={34} />
+
+          {/* Mobile menu */}
+          <div className="md:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Menu">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="p-4 flex flex-col gap-2">
+                  <Link href="/" className="px-3 py-2 rounded hover:bg-muted">
+                    Home
+                  </Link>
+                  <Link href="/practice" className="px-3 py-2 rounded hover:bg-muted">
+                    Practice
+                  </Link>
+                  <Link href="/garage" className="px-3 py-2 rounded hover:bg-muted">
+                    Garage
+                  </Link>
+                  <Link href="/leaderboard" className="px-3 py-2 rounded hover:bg-muted">
+                    Leaderboard
+                  </Link>
+                  {me.data && (
+                    <Link href="/friends" className="px-3 py-2 rounded hover:bg-muted">
+                      Friends
+                    </Link>
+                  )}
+
+                  <div className="mt-3 pt-3 border-t flex flex-col gap-2">
+                    {!me.data ? (
+                      <Button onClick={() => setShowAuth(true)} className="w-full">
+                        Sign in
+                      </Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" className="w-full" asChild>
+                          <Link href="/player">Profile</Link>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => signout.mutate()}
+                          disabled={signout.isPending}
+                        >
+                          Sign out
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
+                    <LanguageToggle />
+                    <ThemeToggle />
+                    <SoundControls />
+                    <WeatherToggle />
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
           <nav className="hidden md:flex items-center gap-2 text-sm">
             <Link href="/" className="px-2 py-1 rounded hover:bg-muted">Home</Link>
             <Link href="/practice" className="px-2 py-1 rounded hover:bg-muted">Practice</Link>
@@ -155,7 +224,7 @@ export function AppHeader() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end min-w-0">
           <LanguageToggle />
           <div className="hidden sm:flex items-center gap-1 sm:gap-2">
             <SoundControls />

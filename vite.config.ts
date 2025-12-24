@@ -4,6 +4,8 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { VitePWA } from "vite-plugin-pwa";
 
+const isProd = process.env.NODE_ENV === "production";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -86,6 +88,14 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         navigateFallback: "/offline.html",
+
+        // In dev, vite-plugin-pwa writes only workbox/sw files into client/dev-dist.
+        // The default globIgnores excludes those, producing the "glob patterns doesn't match any files" warning.
+        // Keep prod defaults, but in dev don't ignore them so the warning goes away.
+        globIgnores: isProd
+          ? ["**/node_modules/**/*", "sw.js", "workbox-*.js"]
+          : ["**/node_modules/**/*"],
+
         runtimeCaching: [
           // Network-first for API calls
           {
@@ -124,8 +134,10 @@ export default defineConfig({
           },
         ],
       },
+      // PWA in dev generates workbox files into client/dev-dist and can be noisy.
+      // Enable it only when explicitly requested (PWA_DEV=true).
       devOptions: {
-        enabled: process.env.NODE_ENV !== "production",
+        enabled: !isProd && process.env.PWA_DEV === "true",
       },
     }),
     ...(process.env.NODE_ENV !== "production" &&

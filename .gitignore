@@ -1,1 +1,16 @@
 node_modules
+
+# Build output
+/dist
+
+# Dev-only PWA output (regenerated)
+/client/dev-dist
+
+# Tool temp folders
+/tmp_rovodev_*
+
+# Vendor/source dumps (not part of app)
+/uploads/monkeytype-master
+
+# Archives
+*.zip

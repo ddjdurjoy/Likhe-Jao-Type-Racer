@@ -1,142 +1,267 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGameStore } from "@/lib/stores/gameStore";
-import { useTypingEngine } from "@/hooks/useTypingEngine";
-import { getRandomWords, getRandomQuote, getRandomLyrics } from "@/lib/data/words";
-import { TypingInput } from "@/components/game/TypingInput";
-import { StatsDisplay } from "@/components/game/StatsDisplay";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { RefreshCw, BookOpen, MessageSquare, Code, Zap } from "lucide-react";
-import type { Difficulty } from "@shared/schema";
-
-type PracticeCategory = "common" | "quotes" | "lyrics" | "code" | "random";
-
-const categories = [
-  { id: "common" as PracticeCategory, name: "Common Words", nameBn: "সাধারণ শব্দ", icon: BookOpen },
-  { id: "quotes" as PracticeCategory, name: "Quotes", nameBn: "উক্তি", icon: MessageSquare },
-  { id: "lyrics" as PracticeCategory, name: "Lyrics", nameBn: "গানের লিরিক্স", icon: MessageSquare },
-  { id: "code" as PracticeCategory, name: "Code Snippets", nameBn: "কোড", icon: Code },
-  { id: "random" as PracticeCategory, name: "Random Mix", nameBn: "মিশ্র", icon: Zap },
-];
-
-const codeSnippets = [
-  "function hello world console log message",
-  "const array map filter reduce forEach",
-  "import export default module require",
-  "async await promise then catch finally",
-  "class constructor this extends super",
-  "if else switch case break continue",
-  "for while do loop iteration index",
-  "try catch throw error exception",
-  "let var const string number boolean",
-  "return undefined null object array",
-];
+import { usePracticeStore } from "@/lib/stores/practiceStore";
+import { useTypingEngine, type PracticeResultStats } from "@/hooks/useTypingEngine";
+import { getNextText } from "@/lib/data/texts";
 
 import { AnimatedBackground } from "@/components/game/AnimatedBackground";
+import { PracticeTopBar } from "@/components/game/PracticeTopBar";
+import { TypingInput } from "@/components/game/TypingInput";
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { PracticeResults } from "@/components/game/PracticeResults";
+function makeSeed() {
+  return (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
+}
 
 export default function Practice() {
+  const { language } = useGameStore();
+  const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
   const [, setLocation] = useLocation();
-  const { language, difficulty, setDifficulty } = useGameStore();
+  const {
+    mode,
+    timeSeconds,
+    wordCount,
+    customText,
+    banglaInputMode,
+    stopOnWordEnd,
+  } = usePracticeStore();
 
-  const [category, setCategory] = useState<PracticeCategory>("common");
+  const [seed, setSeed] = useState(() => makeSeed());
   const [words, setWords] = useState<string[]>([]);
-  const [sessionStats, setSessionStats] = useState({
-    totalWords: 0,
-    totalWpm: 0,
-    races: 0,
-    bestWpm: 0,
+  const [result, setResult] = useState<PracticeResultStats | null>(null);
+  // Time UI
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [localPb, setLocalPb] = useState<number | null>(null);
+  const [serverPb, setServerPb] = useState<number | null>(null);
+  const [pbBeforeRun, setPbBeforeRun] = useState<number | null>(null);
+
+
+  // PB bucketing needs difficulty, so it is defined after difficultyForWords below.
+
+  // Server PB currently supports only time buckets. For other modes, use local PB.
+  const { data: pbRow } = useQuery<any>({
+    queryKey: ["/api/practice/pb", language, timeSeconds, mode, me.data?.id],
+    enabled: !!me.data?.id && mode === "time",
+    queryFn: async () => {
+      const res = await fetch(`/api/practice/pb?timeSeconds=${timeSeconds}&language=${language}`);
+      if (!res.ok) throw new Error("Failed to load PB");
+      return res.json();
+    },
+    retry: false,
   });
 
-  // Use a ref bridge for onComplete to avoid referencing hooks before initialization during render
-  const onCompleteRef = useRef<(stats: { wpm: number }) => void>(() => {});
+  useEffect(() => {
+    if (mode !== "time") {
+      setServerPb(null);
+      return;
+    }
+    if (pbRow && typeof pbRow.wpm === "number") setServerPb(Math.round(pbRow.wpm));
+    else setServerPb(null);
+  }, [pbRow, mode]);
+
+
+  const formatClock = useCallback((totalSeconds: number, padMinutes = false) => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const mm = padMinutes ? String(m).padStart(2, "0") : String(m);
+    return `${mm}:${String(sec).padStart(2, "0")}`;
+  }, []);
+
+
+  type PbBucket = {
+    language: string;
+    mode: string;
+    timeSeconds?: number;
+    wordCount?: number;
+  };
+
+  const pbBucket: PbBucket = useMemo(() => {
+    if (mode === "time") return { language, mode, timeSeconds };
+    if (mode === "words") return { language, mode, wordCount };
+    return { language, mode };
+  }, [language, mode, timeSeconds, wordCount]);
+
+  const pbKey = useMemo(() => {
+    return `practice-pb:${JSON.stringify(pbBucket)}`;
+  }, [pbBucket]);
+
+  const historyKey = useMemo(() => {
+    return `practice-history10:${JSON.stringify(pbBucket)}`;
+  }, [pbBucket]);
 
   const generateWords = useCallback(() => {
-    let newWords: string[];
+    const s = makeSeed();
+    setSeed(s);
 
-    switch (category) {
-      case "quotes":
-        newWords = getRandomQuote(language);
-        break;
-      case "lyrics":
-        newWords = getRandomLyrics(language);
-        break;
-      case "code":
-        const snippet = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
-        newWords = snippet.split(" ");
-        break;
-      case "random":
-        const difficulties: Difficulty[] = ["easy", "medium", "hard"];
-        const randomDiff = difficulties[Math.floor(Math.random() * difficulties.length)];
-        newWords = getRandomWords(language, randomDiff, 15);
-        break;
-      default:
-        newWords = getRandomWords(language, difficulty, 15);
+    // Custom text mode: user-provided text.
+    if (mode === "custom") {
+      const cleaned = (customText || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      // split by spaces but keep punctuation attached (Monkeytype-like)
+      const tokens = cleaned.length ? cleaned.split(" ") : [];
+      setWords(tokens.length ? tokens : [language === "bn" ? "এখানে" : "paste", language === "bn" ? "টেক্সট" : "text"]);
+      return;
     }
 
-    setWords(newWords);
-  }, [category, language, difficulty]);
+    // Always use paragraph/sentence practice for time/words.
+    const { text } = getNextText(language);
+    const tokens = text.replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
 
+    // For words mode, respect wordCount.
+    setWords(mode === "words" ? tokens.slice(0, wordCount) : tokens);
+  }, [mode, language, wordCount, customText]);
+
+  // regenerate when settings change
   useEffect(() => {
+    setResult(null);
     generateWords();
-  }, [generateWords]);
 
-
-  const handleComplete = useCallback(
-    (stats: { wpm: number }) => {
-      setSessionStats((prev) => ({
-        totalWords: prev.totalWords + words.length,
-        totalWpm: prev.totalWpm + stats.wpm,
-        races: prev.races + 1,
-        bestWpm: Math.max(prev.bestWpm, stats.wpm),
-      }));
-      // Defer next-round preparation via ref to avoid ordering issues
-      onCompleteRef.current(stats);
-    },
-    [words.length]
-  );
+    // Load local PB for this bucket
+    try {
+      const raw = localStorage.getItem(pbKey);
+      const n = raw ? Number(raw) : NaN;
+      setLocalPb(Number.isFinite(n) ? n : null);
+    } catch {
+      setLocalPb(null);
+    }
+  }, [generateWords, pbKey]);
 
   const {
     currentInput,
     currentWordIndex,
+    inputHistory,
     stats,
     isFinished,
     inputRef,
+    startTime,
+    elapsedSeconds,
     handleKeyDown,
     handleChange,
     reset,
     focusInput,
+    finish,
   } = useTypingEngine({
     words,
-    onRaceComplete: handleComplete,
     enabled: true,
+    mode,
+    timeLimitSeconds: mode === "time" ? timeSeconds : null,
+    stopOnWordEnd: mode === "time" ? stopOnWordEnd : true,
+    banglaInputMode: language === "bn" ? banglaInputMode : "unicode",
+    onRaceComplete: async (s) => {
+      setResult(s);
+      setRemainingTime(null);
+
+      // Update local PB (always, bucketed)
+      try {
+        const nextPb = Math.max(localPb ?? 0, s.wpm);
+        localStorage.setItem(pbKey, String(nextPb));
+        setLocalPb(nextPb);
+      } catch {
+        // ignore
+      }
+
+      // Update local last-10 history for this bucket
+      try {
+        const raw = localStorage.getItem(historyKey);
+        const prev = raw ? (JSON.parse(raw) as any[]) : [];
+        const next = [{
+          t: Date.now(),
+          wpm: s.wpm,
+          raw: s.rawWpm,
+          acc: s.accuracy,
+        }, ...prev]
+          .slice(0, 10);
+        localStorage.setItem(historyKey, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+
+      // If logged in, refetch server PB after posting (best-effort)
+      // (query key includes time/language so it stays correct per bucket)
+      me.refetch?.();
+
+      // Auto-submit time-test results to leaderboard (auth required).
+      try {
+        const eligibleBucket = mode === "time" && [15, 30, 60, 120].includes(timeSeconds);
+        if (eligibleBucket && s.accuracy >= 95 && me.data?.id) {
+          await apiRequest("POST", "/api/practice/results", {
+            mode: "time",
+            timeSeconds,
+            wpm: s.wpm,
+            rawWpm: s.rawWpm,
+            accuracy: s.accuracy,
+            consistency: s.consistency,
+            errors: Math.round(s.incorrectChars + s.missedChars + s.extraChars),
+            language,
+          });
+        }
+      } catch {
+        // best-effort
+      }
+
+      // Note: keep Practice minimal like Monkeytype; no local history UI here.
+      // Also avoid storing heavy wordResults/chart arrays in localStorage by default.
+    },
   });
 
-  // Now that reset/focusInput are initialized, wire the deferred onComplete behavior
+  // Snapshot PB at the start of a run, so results can display NEW PB correctly.
   useEffect(() => {
-    onCompleteRef.current = () => {
-      setTimeout(() => {
-        reset();
-        generateWords();
-        focusInput();
-      }, 0);
-    };
-  }, [reset, generateWords, focusInput]);
+    if (!startTime || isFinished) {
+      setPbBeforeRun(serverPb ?? localPb);
+    }
+  }, [startTime, isFinished, serverPb, localPb]);
 
-  const handleReset = () => {
-    // Reset engine state and regenerate a fresh words list
+  // Remaining time display
+  useEffect(() => {
+    if (mode !== "time") {
+      setRemainingTime(null);
+      return;
+    }
+    if (!startTime || isFinished) {
+      setRemainingTime(timeSeconds);
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      const spent = (Date.now() - startTime) / 1000;
+      const left = Math.max(0, Math.ceil(timeSeconds - spent));
+      setRemainingTime(left);
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [mode, timeSeconds, startTime, isFinished]);
+
+  const handleRestart = useCallback(() => {
+    setResult(null);
     reset();
     generateWords();
-    // Ensure new round starts focused at the beginning
     setTimeout(() => focusInput(), 0);
-  };
+  }, [reset, generateWords, focusInput]);
 
+  // Keep focus in the typing area (Monkeytype feel)
+  // - initial mount
+  // - after words are regenerated (mode/time/language changes)
+  useEffect(() => {
+    setTimeout(() => focusInput(), 0);
+  }, [focusInput, mode, timeSeconds, wordCount, language]);
 
-  const avgWpm =
-    sessionStats.races > 0
-      ? Math.round(sessionStats.totalWpm / sessionStats.races)
-      : 0;
+  // Monkeytype-like restart shortcut (Tab)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        handleRestart();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleRestart]);
+
 
   return (
     <div className="relative min-h-screen bg-background flex flex-col overflow-hidden">
@@ -144,149 +269,107 @@ export default function Practice() {
         <AnimatedBackground />
       </div>
       <div className="absolute inset-0 bg-background/60" aria-hidden />
-      <main className="relative z-10 flex-1 min-h-0 flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
-        <aside className="w-full md:w-64 space-y-4">
-          <Card className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              {language === "bn" ? "বিভাগ" : "Category"}
-            </h3>
-            <div className="space-y-2">
-              {categories.map((cat) => {
-                const Icon = cat.icon;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      setCategory(cat.id);
-                      reset();
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left",
-                      category === cat.id
-                        ? "bg-primary text-primary-foreground"
-                        : "hover-elevate"
-                    )}
-                    data-testid={`button-category-${cat.id}`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      {language === "bn" ? cat.nameBn : cat.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
 
-          <Card className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              {language === "bn" ? "কঠিনতা" : "Difficulty"}
-            </h3>
-            <div className="space-y-2">
-              {(["easy", "medium", "hard"] as Difficulty[]).map((diff) => (
-                <button
-                  key={diff}
-                  onClick={() => {
-                    setDifficulty(diff);
-                    reset();
-                  }}
-                  className={cn(
-                    "w-full px-3 py-2 rounded-lg transition-all text-left text-sm font-medium capitalize",
-                    difficulty === diff
-                      ? "bg-primary text-primary-foreground"
-                      : "hover-elevate"
-                  )}
-                  data-testid={`button-difficulty-${diff}`}
-                >
-                  {language === "bn"
-                    ? diff === "easy"
-                      ? "সহজ"
-                      : diff === "medium"
-                      ? "মাঝারি"
-                      : "কঠিন"
-                    : diff}
-                </button>
-              ))}
-            </div>
-          </Card>
+      <main className="relative z-10 flex-1 min-h-0 flex flex-col p-3 sm:p-4 overflow-hidden">
+        <div className="max-w-5xl mx-auto w-full flex flex-col gap-8 sm:gap-10 pt-4 sm:pt-6 md:pt-10">
+          <PracticeTopBar
+            language={language}
+            timerText={
+              mode === "time"
+                ? formatClock(remainingTime ?? timeSeconds, true)
+                : startTime
+                  ? formatClock(elapsedSeconds)
+                  : null
+            }
+            timerTitle={
+              mode === "time"
+                ? language === "bn"
+                  ? "অবশিষ্ট সময়"
+                  : "Time remaining"
+                : language === "bn"
+                  ? "অতিক্রান্ত সময়"
+                  : "Elapsed time"
+            }
+            timerUrgent={mode === "time" && (remainingTime ?? timeSeconds) <= 10 && (remainingTime ?? timeSeconds) >= 4}
+            timerCritical={mode === "time" && (remainingTime ?? timeSeconds) <= 3 && (remainingTime ?? timeSeconds) >= 1}
+            timerZero={mode === "time" && (remainingTime ?? timeSeconds) === 0}
+            onRestart={handleRestart}
+          />
 
-          {sessionStats.races > 0 && (
-            <Card className="p-4 overflow-auto max-h-72 min-h-0 flex-1">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                {language === "bn" ? "সেশন পরিসংখ্যান" : "Session Stats"}
-              </h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {language === "bn" ? "রাউন্ড" : "Rounds"}
-                  </span>
-                  <span className="font-medium">{sessionStats.races}</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="shrink-0">
+              <div className="flex items-center gap-6 text-sm tabular-nums text-muted-foreground">
+                <div>
+                  <span className="text-muted-foreground">wpm </span>
+                  <span className="font-semibold text-foreground">{stats.wpm}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {language === "bn" ? "শব্দ" : "Words"}
-                  </span>
-                  <span className="font-medium">{sessionStats.totalWords}</span>
+                <div>
+                  <span className="text-muted-foreground">acc </span>
+                  <span className="font-semibold text-foreground">{stats.accuracy}%</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {language === "bn" ? "গড় WPM" : "Avg WPM"}
-                  </span>
-                  <span className="font-medium">{avgWpm}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {language === "bn" ? "সেরা WPM" : "Best WPM"}
-                  </span>
-                  <span className="font-bold text-primary">{sessionStats.bestWpm}</span>
-                </div>
+                {mode === "time" && (serverPb ?? localPb) !== null && (
+                  <div>
+                    <span className="text-muted-foreground">pb </span>
+                    <span className="font-semibold text-foreground">{serverPb ?? localPb}</span>
+                  </div>
+                )}
               </div>
-            </Card>
-          )}
-        </aside>
-
-        <div className="flex-1 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="gap-2"
-              data-testid="button-reset-practice"
-            >
-              <RefreshCw className="w-4 h-4" />
-              {language === "bn" ? "নতুন শব্দ" : "New Words"}
-            </Button>
-
-            <div className="shrink-0"><StatsDisplay stats={stats} compact /></div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {language === "bn" ? "টাইপ শুরু করতে ক্লিক করুন" : "Click to start typing"}
+            </div>
           </div>
 
-          <Card className="flex-1 p-6 flex flex-col justify-center">
+          <div>
             <TypingInput
               words={words}
               currentWordIndex={currentWordIndex}
               currentInput={currentInput}
+              inputHistory={inputHistory}
               onKeyDown={handleKeyDown}
               onChange={handleChange}
               inputRef={inputRef as React.RefObject<HTMLInputElement>}
               disabled={isFinished}
             />
+          </div>
 
-            {isFinished && (
-              <div className="mt-6 text-center">
-                <p className="text-lg text-success font-medium mb-4">
-                  {language === "bn" ? "সম্পন্ন!" : "Complete!"}
-                </p>
-                <Button onClick={handleReset} data-testid="button-next-round">
-                  {language === "bn" ? "পরবর্তী রাউন্ড" : "Next Round"}
-                </Button>
-              </div>
-            )}
-          </Card>
-
-          <StatsDisplay stats={stats} />
+          <div className="text-xs text-muted-foreground flex items-center justify-between">
+            <div className="tabular-nums">
+              {mode === "time"
+                ? (language === "bn" ? "টাইম" : "time")
+                : (language === "bn" ? "শব্দ" : "words")}
+              {" "}
+              {mode === "time"
+                ? formatClock(timeSeconds)
+                : `${Math.min(currentWordIndex + 1, words.length)} / ${words.length}`}
+            </div>
+            <div className="tabular-nums">
+              {language === "bn" ? "Tab = রিস্টার্ট" : "tab = restart"}
+            </div>
+          </div>
         </div>
       </main>
+
+      {result && (
+        <PracticeResults
+          result={result}
+          mode={mode}
+          timeSeconds={timeSeconds}
+          wordCount={wordCount}
+          language={language}
+          isAuthed={!!me.data?.id}
+          pb={serverPb ?? localPb}
+          pbBeforeRun={pbBeforeRun}
+          historyKey={historyKey}
+          onGoToAuth={() => setLocation("/auth")}
+          onClose={() => setResult(null)}
+          onRestart={handleRestart}
+          onContinue={() => {
+            setResult(null);
+            setTimeout(() => focusInput(), 0);
+          }}
+        />
+      )}
     </div>
   );
 }

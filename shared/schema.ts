@@ -26,6 +26,9 @@ export const users = pgTable("users", {
   language: text("language").default("en"),
   soundEnabled: integer("sound_enabled").default(1),
   volume: integer("volume").default(80),
+
+  // Optional: used for country-based leaderboards (e.g., Bangladesh)
+  country: text("country"), // ISO-2 like "BD"
 });
 
 export const playerStats = pgTable("player_stats", {
@@ -69,6 +72,25 @@ export const friendRequests = pgTable("friend_requests", {
   respondedAt: timestamp("responded_at"),
 });
 
+export const practiceResults = pgTable("practice_results", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(),
+
+  // bucketing
+  mode: text("mode").notNull(), // "time"
+  timeSeconds: integer("time_seconds").notNull(), // 15/30/60/120
+
+  // scoring
+  wpm: real("wpm").notNull(),
+  rawWpm: real("raw_wpm").notNull(),
+  accuracy: real("accuracy").notNull(),
+  consistency: real("consistency").notNull(),
+  errors: integer("errors").notNull(),
+  language: text("language").notNull(), // en/bn
+
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const achievements = pgTable("achievements", {
   id: varchar("id", { length: 36 }).primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull(),
@@ -81,6 +103,7 @@ export const insertFriendSchema = createInsertSchema(friends).omit({ id: true, c
 export const insertFriendRequestSchema = createInsertSchema(friendRequests).omit({ id: true, createdAt: true, respondedAt: true });
 export const insertPlayerStatsSchema = createInsertSchema(playerStats).omit({ id: true });
 export const insertRaceResultSchema = createInsertSchema(raceResults).omit({ id: true, createdAt: true });
+export const insertPracticeResultSchema = createInsertSchema(practiceResults).omit({ id: true, createdAt: true });
 export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, unlockedAt: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -89,6 +112,8 @@ export type InsertPlayerStats = z.infer<typeof insertPlayerStatsSchema>;
 export type PlayerStats = typeof playerStats.$inferSelect;
 export type InsertRaceResult = z.infer<typeof insertRaceResultSchema>;
 export type RaceResult = typeof raceResults.$inferSelect;
+export type InsertPracticeResult = z.infer<typeof insertPracticeResultSchema>;
+export type PracticeResult = typeof practiceResults.$inferSelect;
 export type InsertFriend = z.infer<typeof insertFriendSchema>;
 export type Friend = typeof friends.$inferSelect;
 export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
