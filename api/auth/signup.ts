@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { db } from '../../server/db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
@@ -44,9 +45,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
+    // NOTE: `users.id` is required in the schema (varchar(36)), so we generate a UUID.
+    const id = crypto.randomUUID();
+
     const [newUser] = await db
       .insert(users)
       .values({
+        id,
         username,
         passwordHash: hashedPassword,
         displayName: displayName || username,
