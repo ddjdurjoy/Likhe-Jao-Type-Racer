@@ -13,7 +13,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   const dbStatus = await pingDb();
-  return res.status(dbStatus.ok ? 200 : 500).json({
+  // Always return 200 so clients (and browser console) can read diagnostics
+  // without showing it as a failed network request.
+  return res.status(200).json({
     ok: dbStatus.ok,
     env: {
       hasDatabaseUrl: !!process.env.DATABASE_URL,

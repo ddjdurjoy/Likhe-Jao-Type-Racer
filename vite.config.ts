@@ -96,7 +96,10 @@ export default defineConfig({
       },
       workbox: {
         cleanupOutdatedCaches: true,
+        // Only use the offline SPA fallback for *app navigations*.
+        // Never intercept API calls or direct navigations to /api/*.
         navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/api(\/|$)/],
 
         // In dev, vite-plugin-pwa writes only workbox/sw files into client/dev-dist.
         // The default globIgnores excludes those, producing the "glob patterns doesn't match any files" warning.
