@@ -21,9 +21,8 @@ declare module "http" {
 
 // CORS configuration for production (Vercel frontend + Render backend)
 const allowedOrigins = [
-  "http://localhost:5000",
-  "http://localhost:5001", 
-  "https://likhe-jao-typeracer.vercel.app",
+  "http://localhost:5000", 
+  "https://likhe-jao.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
