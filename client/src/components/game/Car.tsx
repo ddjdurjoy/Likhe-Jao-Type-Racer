@@ -1,39 +1,73 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { CARS } from "@/lib/stores/gameStore";
 
 interface CarProps {
   carId: number;
   progress: number;
+  wpm?: number;
   playerName: string;
   isPlayer: boolean;
   isAI?: boolean;
   position: number;
   lane: number;
+  laneCount: number;
   isRacing?: boolean;
 }
 
 export function Car({
   carId,
   progress,
+  wpm = 0,
   playerName,
   isPlayer,
   isAI,
   position,
   lane,
+  laneCount,
   isRacing,
 }: CarProps) {
   const car = CARS[carId] || CARS[0];
 
+ // Smooth car motion (more like acceleration), instead of snapping to progress updates.
+ const [displayProgress, setDisplayProgress] = useState(progress);
+ const targetRef = useRef(progress);
+ targetRef.current = progress;
+
+ const speedFactor = useMemo(() => {
+   // Higher WPM -> snappier response.
+   return Math.max(0.08, Math.min(0.28, 0.08 + wpm / 400));
+ }, [wpm]);
+
+ useEffect(() => {
+   let raf = 0;
+   const step = () => {
+     setDisplayProgress((cur) => {
+       const target = targetRef.current;
+       const next = cur + (target - cur) * speedFactor;
+       // Snap when very close.
+       return Math.abs(next - target) < 0.05 ? target : next;
+     });
+     raf = requestAnimationFrame(step);
+   };
+   raf = requestAnimationFrame(step);
+   return () => cancelAnimationFrame(raf);
+ }, [speedFactor]);
+
  return (
     <div
       className={cn(
-        "absolute transition-all duration-100 ease-out",
+        // Use left so % is relative to the track width (translate% was relative to car width).
+        "absolute will-change-[left,transform] transition-[left,transform] duration-150 ease-out",
         isRacing && progress > 0 && "animate-car-bounce"
       )}
       style={{
-        left: `${Math.min(progress, 95)}%`,
-        top: `${lane * 25 + 5}%`,
-        transform: "translateY(-50%)",
+        // Keep the car fully inside the track.
+        // We anchor the car by its LEFT edge (no translateX), so 0% truly starts inside.
+        // Also reserve space near the finish line so the car doesn't overlap the checkered bar.
+        left: `clamp(8px, ${Math.min(displayProgress, 100)}%, calc(100% - 92px))`,
+        top: `${((lane + 0.5) / Math.max(1, laneCount)) * 100}%`,
+        transform: "translate(0, -50%)",
       }}
       data-testid={`car-${isPlayer ? "player" : `ai-${lane}`}`}
     >

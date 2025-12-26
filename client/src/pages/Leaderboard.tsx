@@ -243,7 +243,7 @@ export default function Leaderboard() {
                   ? "লিডারবোর্ডে আপনার নাম দেখতে রেস শুরু করুন!"
                   : "Start racing to see your name on the leaderboard!"}
               </p>
-              <Button onClick={() => setLocation("/race")} data-testid="button-start-racing">
+              <Button onClick={() => setLocation("/?start=race")} data-testid="button-start-racing">
                 {language === "bn" ? "রেস শুরু করুন" : "Start Racing"}
               </Button>
             </Card>

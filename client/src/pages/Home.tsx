@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useGameStore, CARS } from "@/lib/stores/gameStore";
 import { useQuery } from "@tanstack/react-query";
@@ -26,8 +26,9 @@ import type { Difficulty, Language } from "@shared/schema";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const me = useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
-  const isAuthed = !!me.data?.id;
+
+  // Guest mode: backend always returns a session user.
+  useQuery<any>({ queryKey: ["/api/auth/me"], retry: false });
   
   const {
     username,
@@ -47,32 +48,25 @@ export default function Home() {
 
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showRaceDialog, setShowRaceDialog] = useState(false);
-  const [raceDialogStep, setRaceDialogStep] = useState<"root" | "private" | "join">("root");
-  const [pendingDestination, setPendingDestination] = useState<string>("/race?mode=public");
+  const [pendingDestination, setPendingDestination] = useState<string>("__race_mode_picker__");
   const [tempUsername, setTempUsername] = useState(username);
-  const [joinCode, setJoinCode] = useState("");
-
-  const startRaceTo = (dest: string) => {
-    if (!username) {
-      setPendingDestination(dest);
-      setShowStartDialog(true);
-    } else {
-      setLocation(dest);
-    }
-  };
 
   const openRaceDialog = () => {
-    setRaceDialogStep("root");
-    setJoinCode("");
     setShowRaceDialog(true);
   };
 
   const handleConfirmStart = () => {
-    if (tempUsername.trim()) {
-      setUsername(tempUsername.trim());
-      setShowStartDialog(false);
-      setLocation(pendingDestination);
+    if (!tempUsername.trim()) return;
+    setUsername(tempUsername.trim());
+    setShowStartDialog(false);
+
+    // Special case: after entering name, open the race mode picker.
+    if (pendingDestination === "__race_mode_picker__") {
+      openRaceDialog();
+      return;
     }
+
+    setLocation(pendingDestination);
   };
 
   const handlePractice = () => {
@@ -87,11 +81,47 @@ export default function Home() {
     setLocation("/garage");
   };
 
-  const handleLocalRace = () => {
-    if (!isAuthed) {
-      setLocation("/auth");
+  const startRaceFlow = useCallback(() => {
+    // If username is missing, we will prompt first, then continue to the mode picker.
+    if (!username) {
+      setPendingDestination("__race_mode_picker__");
+      setShowStartDialog(true);
       return;
     }
+    openRaceDialog();
+  }, [openRaceDialog, username]);
+
+  // If navigated with ?start=race, open the race flow automatically.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("start") === "race") {
+      // Clear query to avoid reopening on back/refresh.
+      window.history.replaceState({}, "", "/");
+      setTimeout(() => startRaceFlow(), 0);
+    }
+  }, [startRaceFlow]);
+
+  const handleStartRace = () => startRaceFlow();
+
+  const startVsBots = () => {
+    // Ensure name exists first
+    if (!username) {
+      setPendingDestination("/bot-race");
+      setShowStartDialog(true);
+      return;
+    }
+    setShowRaceDialog(false);
+    setLocation("/bot-race");
+  };
+
+  const startVsFriend = () => {
+    if (!username) {
+      setPendingDestination("/local-race");
+      setShowStartDialog(true);
+      return;
+    }
+    setShowRaceDialog(false);
     setLocation("/local-race");
   };
 
@@ -113,7 +143,7 @@ export default function Home() {
           <Button
             size="lg"
             className="h-16 sm:h-20 text-base sm:text-lg font-semibold gap-2 sm:gap-3"
-            onClick={handleLocalRace}
+            onClick={handleStartRace}
             data-testid="button-start-race"
           >
             <Play className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -216,86 +246,17 @@ export default function Home() {
             </DialogDescription>
           </DialogHeader>
 
-          {raceDialogStep === "root" && (
-            <div className="grid gap-3 mt-4">
-              <Button
-                className="h-12 text-base font-semibold gap-2"
-                onClick={() => {
-                  setShowRaceDialog(false);
-                  startRaceTo("/race?mode=public");
-                }}
-              >
-                <Users className="w-5 h-5" />
-                {language === "bn" ? "পাবলিক ম্যাচ" : "Public Match"}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 text-base font-semibold gap-2"
-                onClick={() => setRaceDialogStep("private")}
-              >
-                <Play className="w-5 h-5" />
-                {language === "bn" ? "প্রাইভেট রুম" : "Private Room"}
-              </Button>
-            </div>
-          )}
+          <div className="grid gap-3 mt-4">
+            <Button className="h-12 text-base font-semibold gap-2" onClick={startVsBots}>
+              <Zap className="w-5 h-5" />
+              {language === "bn" ? "কম্পিউটারের সাথে খেলুন" : "Play with computer"}
+            </Button>
+            <Button variant="outline" className="h-12 text-base font-semibold gap-2" onClick={startVsFriend}>
+              <Wifi className="w-5 h-5" />
+              {language === "bn" ? "বন্ধুর সাথে খেলুন" : "Play with friend"}
+            </Button>
+          </div>
 
-          {raceDialogStep === "private" && (
-            <div className="grid gap-3 mt-4">
-              <Button
-                className="h-12 text-base font-semibold"
-                onClick={() => {
-                  setShowRaceDialog(false);
-                  startRaceTo("/race?mode=private");
-                }}
-              >
-                {language === "bn" ? "রুম তৈরি করুন" : "Create Room"}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 text-base font-semibold"
-                onClick={() => setRaceDialogStep("join")}
-              >
-                {language === "bn" ? "রুমে যোগ দিন" : "Join Room"}
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10"
-                onClick={() => setRaceDialogStep("root")}
-              >
-                {language === "bn" ? "ফিরে যান" : "Back"}
-              </Button>
-            </div>
-          )}
-
-          {raceDialogStep === "join" && (
-            <div className="grid gap-3 mt-4">
-              <Input
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder={language === "bn" ? "রুম কোড লিখুন" : "Enter room code"}
-                className="h-12"
-              />
-              <Button
-                className="h-12 text-base font-semibold"
-                onClick={() => {
-                  const code = joinCode.trim();
-                  if (!code) return;
-                  setShowRaceDialog(false);
-                  startRaceTo(`/race?code=${encodeURIComponent(code)}`);
-                }}
-                disabled={!joinCode.trim()}
-              >
-                {language === "bn" ? "যোগ দিন" : "Join"}
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10"
-                onClick={() => setRaceDialogStep("private")}
-              >
-                {language === "bn" ? "ফিরে যান" : "Back"}
-              </Button>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 

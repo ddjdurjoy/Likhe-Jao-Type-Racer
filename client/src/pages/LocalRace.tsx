@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { NamePromptDialog } from "@/components/ui/NamePromptDialog";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,14 +10,7 @@ import { P2PConnection } from "@/lib/p2pConnection";
 import { Users, Wifi, AlertCircle, CheckCircle2, Loader2, Globe, Lock, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateSimpleRoomCode } from "@/lib/roomCodeGenerator";
-import { 
-  createPublicRoom, 
-  getPublicRooms, 
-  getPublicRoom, 
-  joinPublicRoom,
-  addGuestSignal,
-  getGuestSignals 
-} from "@/lib/publicRoomManager";
+import type { P2PRoom } from "@shared/schema";
 
 type RoomMode = "select" | "public-host" | "public-join" | "custom-create" | "custom-join";
 
@@ -24,7 +18,11 @@ export default function LocalRace() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const language = useGameStore((state) => state.language);
-  const username = useGameStore((state) => state.username) || "Guest";
+  const storedUsername = useGameStore((state) => state.username);
+  const setUsername = useGameStore((state) => state.setUsername);
+  const username = storedUsername || "Guest";
+
+  const [showNamePrompt, setShowNamePrompt] = useState(!storedUsername);
 
   const [mode, setMode] = useState<RoomMode>("select");
   const [roomCode, setRoomCode] = useState("");
@@ -86,7 +84,16 @@ export default function LocalRace() {
       const signal = await p2p.createRoom(username);
       const code = generateSimpleRoomCode();
       
-      createPublicRoom(code, username, signal);
+      // Create room on server
+      const response = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, hostUsername: username, hostSignal: signal }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create room on server");
+      }
       
       setRoomCode(code);
       setMode("public-host");
@@ -104,13 +111,22 @@ export default function LocalRace() {
   };
 
   const pollForGuests = (code: string, p2p: P2PConnection) => {
-    const interval = setInterval(() => {
-      const guestSignals = getGuestSignals(code);
-      if (guestSignals.length > 0) {
-        guestSignals.forEach((guest) => {
-          p2p.acceptPeer(guest.signal);
-        });
-        clearInterval(interval);
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/rooms/${code}`);
+        if (!response.ok) {
+          clearInterval(interval);
+          return;
+        }
+        const room: P2PRoom = await response.json();
+        if (room.guestSignals.length > 0) {
+          room.guestSignals.forEach((guest) => {
+            p2p.acceptPeer(guest.signal);
+          });
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Poll error:", err);
       }
     }, 1000);
 
@@ -129,13 +145,18 @@ export default function LocalRace() {
     setError("");
     
     try {
-      const room = getPublicRoom(inputRoomCode.toUpperCase());
+      const code = inputRoomCode.toUpperCase();
       
-      if (!room) {
+      // Get room from server
+      const roomResponse = await fetch(`/api/rooms/${code}`);
+      
+      if (!roomResponse.ok) {
         setError(language === "bn" ? "রুম পাওয়া যায়নি" : "Room not found");
         setLoading(false);
         return;
       }
+
+      const room: P2PRoom = await roomResponse.json();
 
       const p2p = new P2PConnection();
       
@@ -159,12 +180,19 @@ export default function LocalRace() {
 
       const signal = await p2p.joinRoom(room.hostSignal, username);
       
-      // Store guest signal for host to pick up
-      addGuestSignal(inputRoomCode.toUpperCase(), username, signal);
-      joinPublicRoom(inputRoomCode.toUpperCase(), username);
+      // Send signal to server so host can poll for it
+      const joinResponse = await fetch(`/api/rooms/${code}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, guestSignal: signal }),
+      });
+
+      if (!joinResponse.ok) {
+        throw new Error("Failed to join room on server");
+      }
       
       setMode("public-join");
-      setRoomCode(inputRoomCode.toUpperCase());
+      setRoomCode(code);
       setP2PConnection(p2p);
       
     } catch (err: any) {
@@ -257,7 +285,19 @@ export default function LocalRace() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 sm:p-6">
+    <>
+      <NamePromptDialog
+        open={showNamePrompt}
+        onOpenChange={setShowNamePrompt}
+        defaultValue={storedUsername || ""}
+        language={language}
+        onConfirm={(name) => {
+          if (!name) return;
+          setUsername(name);
+          setShowNamePrompt(false);
+        }}
+      />
+      <div className="container max-w-4xl mx-auto p-4 sm:p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -489,5 +529,6 @@ export default function LocalRace() {
         </Card>
       )}
     </div>
+    </>
   );
 }

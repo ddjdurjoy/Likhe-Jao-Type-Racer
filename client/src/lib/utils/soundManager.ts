@@ -34,6 +34,7 @@ class SoundManager {
     panner3d: [] as PannerNode[],
   };
   private ambientNodes: { stop: () => void } | null = null;
+  private engineNodes: { stop: () => void } | null = null;
   private howler: any | null = null;
   private masterVolume: number = 0.8; // 0..1
   private enabled: boolean = true; // mute toggle
@@ -285,42 +286,17 @@ class SoundManager {
     setTimeout(() => this.playTone(550, 0.14, "sine", 0.45, { spatial }), 100);
   }
 
-  playEngineHum(duration: number = 0.5, spatial?: SpatialOptions): void {
-    if (!this.enabled) return;
+  playEngineHum(_duration: number = 0.5, _spatial?: SpatialOptions): void {
+    // Engine sound disabled by design.
+  }
 
-    try {
-      const ctx = this.getContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
+  startEngineHumLoop(_spatial?: SpatialOptions): void {
+    // Engine sound disabled by design.
+  }
 
-      lfo.frequency.setValueAtTime(5, ctx.currentTime);
-      lfoGain.gain.setValueAtTime(20, ctx.currentTime);
-
-      lfo.connect(lfoGain);
-      lfoGain.connect(oscillator.frequency);
-
-      oscillator.connect(gainNode);
-      {
-        const endNode = this.applySpatial(gainNode, spatial);
-        endNode.connect(this.masterGain!);
-      }
-
-      oscillator.type = "sawtooth";
-      oscillator.frequency.setValueAtTime(80, ctx.currentTime);
-
-      const volume = 0.1 * this.masterVolume;
-      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-
-      oscillator.start(ctx.currentTime);
-      lfo.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + duration);
-      lfo.stop(ctx.currentTime + duration);
-    } catch (e) {
-      console.warn("Audio playback failed:", e);
-    }
+  stopEngineHumLoop(): void {
+    // Engine sound disabled by design.
+    return;
   }
 
   playBoost(spatial?: SpatialOptions): void {

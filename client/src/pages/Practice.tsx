@@ -223,8 +223,12 @@ export default function Practice() {
       setRemainingTime(null);
       return;
     }
-    if (!startTime || isFinished) {
+    if (!startTime) {
       setRemainingTime(timeSeconds);
+      return;
+    }
+    if (isFinished) {
+      setRemainingTime(0);
       return;
     }
 
@@ -357,11 +361,11 @@ export default function Practice() {
           timeSeconds={timeSeconds}
           wordCount={wordCount}
           language={language}
-          isAuthed={!!me.data?.id}
+          isAuthed={true}
           pb={serverPb ?? localPb}
           pbBeforeRun={pbBeforeRun}
           historyKey={historyKey}
-          onGoToAuth={() => setLocation("/auth")}
+          onGoToAuth={() => {}}
           onClose={() => setResult(null)}
           onRestart={handleRestart}
           onContinue={() => {

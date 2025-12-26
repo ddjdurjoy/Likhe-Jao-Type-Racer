@@ -12,7 +12,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import Auth from "@/pages/Auth";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGameStore } from "@/lib/stores/gameStore";
@@ -48,8 +47,6 @@ export function AppHeader() {
   const needsEmailVerify = useMemo(() => !!me.data?.email && !me.data?.emailVerifiedAt, [me.data]);
   const [showSettings, setShowSettings] = useState(false);
   const { canInstall, promptInstall } = useInstallPrompt();
-  const [showAuth, setShowAuth] = useState(false);
-
 
   const saveProfileSettings = useMutation({
     mutationFn: async () => {
@@ -180,8 +177,8 @@ export function AppHeader() {
 
                   <div className="mt-3 pt-3 border-t flex flex-col gap-2">
                     {!me.data ? (
-                      <Button onClick={() => setShowAuth(true)} className="w-full">
-                        Sign in
+                      <Button onClick={() => setLocation("/player")} className="w-full">
+                        Profile
                       </Button>
                     ) : (
                       <>
@@ -251,36 +248,13 @@ export function AppHeader() {
             <Settings className="w-5 h-5" />
           </Button>
 
-          {me.data ? (
-            <>
-              <Button variant="ghost" size="icon" asChild aria-label="Profile">
-                <Link href="/player">
-                  <UserRound className="w-5 h-5" />
-                </Link>
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => signout.mutate()}
-                disabled={signout.isPending}
-              >
-                Sign out
-              </Button>
-            </>
-          ) : (
-            <Button size="sm" onClick={() => setShowAuth(true)}>Sign in</Button>
-          )}
+          <Button variant="ghost" size="icon" asChild aria-label="Profile">
+            <Link href="/player">
+              <UserRound className="w-5 h-5" />
+            </Link>
+          </Button>
         </div>
       </div>
-      <Dialog open={showAuth} onOpenChange={setShowAuth}>
-        <DialogContent className="w-[95vw] max-w-md">
-          <DialogHeader>
-            <DialogTitle>Sign in / Sign up</DialogTitle>
-          </DialogHeader>
-          <Auth onAuthed={() => setShowAuth(false)} redirectTo="/player" />
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent className="w-[95vw] max-w-xl">
           <DialogHeader>
@@ -321,7 +295,7 @@ export function AppHeader() {
 
             <TabsContent value="profile" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Sign in to edit your profile settings.</p>
+                <p className="text-sm text-muted-foreground">Edit your profile settings.</p>
               ) : (
                 <>
                   <div className="space-y-2">
@@ -346,7 +320,7 @@ export function AppHeader() {
 
             <TabsContent value="account" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Sign in to edit your account.</p>
+                <p className="text-sm text-muted-foreground">Edit your account.</p>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
@@ -402,7 +376,7 @@ export function AppHeader() {
 
             <TabsContent value="password" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Sign in to change your password.</p>
+                <p className="text-sm text-muted-foreground">Change your password.</p>
               ) : (
                 <>
                   <div className="space-y-2">

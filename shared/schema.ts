@@ -190,3 +190,28 @@ export interface AchievementDef {
   category: "speed" | "accuracy" | "milestone" | "special";
   requirement: number;
 }
+
+// P2P Room signaling types
+export interface P2PRoom {
+  code: string;
+  hostUsername: string;
+  hostSignal: any;
+  createdAt: number;
+  players: string[];
+  guestSignals: Array<{ username: string; signal: any }>;
+}
+
+export interface CreateRoomRequest {
+  code: string;
+  hostUsername: string;
+  hostSignal: any;
+}
+
+export interface JoinRoomRequest {
+  username: string;
+  guestSignal: any;
+}
+
+export interface RoomListResponse {
+  rooms: P2PRoom[];
+}

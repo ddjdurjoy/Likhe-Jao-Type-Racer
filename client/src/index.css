@@ -408,6 +408,25 @@ input, textarea { caret-color: hsl(var(--primary)); }
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+  @keyframes race-dashes-move {
+    from { background-position-x: 0px; }
+    to { background-position-x: -160px; }
+  }
+
+  .race-dashes {
+    height: 2px;
+    width: 100%;
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.45) 0px,
+      rgba(255,255,255,0.45) 14px,
+      rgba(255,255,255,0) 14px,
+      rgba(255,255,255,0) 34px
+    );
+    animation: race-dashes-move 0.9s linear infinite;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.08));
+  }
+
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {

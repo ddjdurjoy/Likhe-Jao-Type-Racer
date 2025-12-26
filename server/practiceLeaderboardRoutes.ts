@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
+import { ensureGuestUserId } from "./guest";
 
 // Accuracy threshold
 const MIN_ACC = 95;
@@ -17,11 +18,10 @@ const createPracticeResultBody = z.object({
 });
 
 export function registerPracticeLeaderboardRoutes(app: Express) {
-  // Personal best for the current user (auth required)
+  // Personal best for the current user
   app.get("/api/practice/pb", async (req: any, res) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const userId = await ensureGuestUserId(req);
 
       const timeSeconds = Number(req.query.timeSeconds ?? 30) || 30;
       const language = (req.query.language as string) || "en";
@@ -38,11 +38,10 @@ export function registerPracticeLeaderboardRoutes(app: Express) {
     }
   });
 
-  // Submit a practice result (auth required)
+  // Submit a practice result
   app.post("/api/practice/results", async (req: any, res) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+      const userId = await ensureGuestUserId(req);
 
       const parsed = createPracticeResultBody.safeParse(req.body);
       if (!parsed.success) {

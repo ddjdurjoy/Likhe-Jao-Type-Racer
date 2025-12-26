@@ -33,25 +33,48 @@ export function useAIOpponents(wordCount: number) {
 
   const simulateTyping = useCallback(
     (playerId: string, config: AIConfig) => {
-      const progressPerSecond = config.baseWpm / 60;
-      const variance = (Math.random() - 0.5) * 2 * config.variance;
-      const adjustedProgress = progressPerSecond + variance / 60;
+      const state = useGameStore.getState();
+      const me = state.players.find((p) => p.id === "player");
+      const myWpm = me?.wpm ?? 0;
+      const myProgress = me?.progress ?? 0;
 
       const currentProgress = progressRef.current.get(playerId) || 0;
-      let newProgress = currentProgress + adjustedProgress / 10;
 
-      if (Math.random() < config.errorRate / 10) {
-        newProgress = Math.max(0, newProgress - 0.5);
+      // Adaptive AI (rubber-banding): aim slightly above/below the player depending on difficulty
+      // and dynamically adjust based on progress gap.
+      const difficultyBias =
+        config.baseWpm >= 65 ? 1.06 : config.baseWpm >= 40 ? 1.02 : 0.98;
+
+      const gap = myProgress - currentProgress; // +gap => AI behind
+      const gapBoost = Math.max(-0.12, Math.min(0.18, gap * 0.01));
+
+      const targetWpmBase = myWpm > 0 ? myWpm * (difficultyBias + gapBoost) : config.baseWpm;
+      const jitter = (Math.random() - 0.5) * 2 * config.variance;
+
+      // Clamp AI to a reasonable range so it still feels like a personality.
+      const minWpm = Math.max(10, config.baseWpm * 0.7);
+      const maxWpm = config.baseWpm * 1.45;
+      const targetWpm = Math.max(minWpm, Math.min(maxWpm, targetWpmBase + jitter));
+
+      // Convert WPM -> progress/sec for a words race. Approx: 1 word = 5 chars.
+      // progress is % of total words.
+      const wordsPerSecond = targetWpm / 60;
+      const progressPerSecond = (wordsPerSecond / Math.max(1, wordCount)) * 100;
+
+      // Physics-like smoothing: integrate small dt (tick=0.1s)
+      let newProgress = currentProgress + progressPerSecond * 0.1;
+
+      // Occasional "mistake" slows momentarily.
+      if (Math.random() < config.errorRate * 0.1) {
+        newProgress = Math.max(0, newProgress - 0.25);
       }
 
       newProgress = Math.min(100, newProgress);
       progressRef.current.set(playerId, newProgress);
 
-      const estimatedWpm = config.baseWpm + (Math.random() - 0.5) * config.variance;
-
       updatePlayer(playerId, {
         progress: newProgress,
-        wpm: Math.round(estimatedWpm),
+        wpm: Math.round(targetWpm),
         finished: newProgress >= 100,
       });
 
@@ -63,7 +86,7 @@ export function useAIOpponents(wordCount: number) {
         }
       }
     },
-    [updatePlayer]
+    [updatePlayer, wordCount]
   );
 
   useEffect(() => {

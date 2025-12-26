@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,8 @@ export function PracticeResults({
   pb,
   pbBeforeRun,
   historyKey,
+  headerAddon,
+  extraStats,
   onGoToAuth,
   onClose,
   onRestart,
@@ -38,6 +40,8 @@ export function PracticeResults({
   pb: number | null;
   pbBeforeRun: number | null;
   historyKey: string;
+  headerAddon?: React.ReactNode;
+  extraStats?: Array<{ label: string; value: string | number; highlight?: boolean; badge?: string }>;
   onGoToAuth: () => void;
   onClose: () => void;
   onRestart: () => void;
@@ -122,6 +126,7 @@ export function PracticeResults({
             <div>
               <h2 className="text-lg sm:text-xl font-semibold">{language === "bn" ? "ফলাফল" : "Results"}</h2>
               <div className="text-xs sm:text-sm text-muted-foreground">{subtitle}</div>
+              {headerAddon ? <div className="mt-2">{headerAddon}</div> : null}
             </div>
             <Button variant="outline" onClick={onClose} size="sm" className="shrink-0">
               {language === "bn" ? "বন্ধ" : "Close"}
@@ -134,7 +139,10 @@ export function PracticeResults({
             <ResultStat label={language === "bn" ? "নির্ভুলতা" : "Accuracy"} value={`${result.accuracy}%`} />
             <ResultStat label={language === "bn" ? "সামঞ্জস্য" : "Consistency"} value={`${result.consistency}%`} />
             <ResultStat label={language === "bn" ? "ত্রুটি" : "Errors"} value={err} />
-            <ResultStat label={language === "bn" ? "সময়" : "Time"} value={`${result.timeSeconds}s`} />
+            <ResultStat label={language === "bn" ? "সময়" : "Time"} value={`${result.timeSeconds}s`} />
+            {(extraStats ?? []).map((s) => (
+              <ResultStat key={s.label} label={s.label} value={s.value} highlight={s.highlight} badge={s.badge} />
+            ))}
           </div>
 
           {pb !== null && (
@@ -347,19 +355,7 @@ export function PracticeResults({
             </div>
           ) : null}
 
-          {!isAuthed ? (
-            <div className="mt-4 sm:mt-6 rounded-lg border border-card-border p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-              <div className="text-[10px] sm:text-xs text-muted-foreground">
-                {language === "bn"
-                  ? "স্ট্যাটস সেভ করতে হলে সাইন আপ / লগইন করতে হবে।"
-                  : "To save your stats, you need to sign up / log in."}
-              </div>
-              <Button variant="outline" size="sm" onClick={onGoToAuth} className="shrink-0">
-                {language === "bn" ? "সাইন আপ / লগইন" : "Sign up / Log in"}
-              </Button>
-            </div>
-          ) : null}
-
+          
           <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button className="flex-1" onClick={onRestart} size="sm">
               {language === "bn" ? "আবার" : "Restart"}

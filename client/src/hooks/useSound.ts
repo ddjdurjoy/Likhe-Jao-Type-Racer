@@ -15,8 +15,12 @@ export type UseSoundApi = {
     victory: () => void;
     finish: () => void;
     powerUp: () => void;
-    engineHum: (duration?: number) => void;
+    engineHum: (duration?: number) => void; // one-shot
     boost: () => void;
+  };
+  engine: {
+    start: () => void;
+    stop: () => void;
   };
   ambient: {
     start: () => void;
@@ -57,6 +61,10 @@ export function useSound(): UseSoundApi {
       powerUp: () => soundManager.playPowerUp(),
       engineHum: (d?: number) => soundManager.playEngineHum(d ?? 0.5),
       boost: () => soundManager.playBoost(),
+    },
+    engine: {
+      start: () => soundManager.startEngineHumLoop(),
+      stop: () => soundManager.stopEngineHumLoop(),
     },
     ambient: {
       start: () => soundManager.startAmbientMusic(),

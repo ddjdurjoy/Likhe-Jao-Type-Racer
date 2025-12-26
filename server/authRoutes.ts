@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword, makeToken } from "./auth";
+import { ensureGuestUserId } from "./guest";
 import multer from "multer";
 import path from "path";
 import { ensureUploadsDir, UPLOADS_DIR } from "./uploads";
@@ -31,8 +32,8 @@ export function registerAuthRoutes(app: Express) {
     },
   });
   app.get("/api/auth/me", async (req: any, res) => {
-    const userId = req.session?.userId;
-    if (!userId) return res.status(200).json(null);
+    // Guest mode: always ensure a session user so the app can work without sign-in.
+    const userId = await ensureGuestUserId(req);
     const user: any = await storage.getUser(userId);
     if (!user) return res.status(200).json(null);
     // never leak passwordHash/token
