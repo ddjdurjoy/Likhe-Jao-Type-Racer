@@ -254,6 +254,17 @@ export default function Practice() {
     setTimeout(() => focusInput(), 0);
   }, [focusInput, mode, timeSeconds, wordCount, language]);
 
+  // Reset typing state when language changes mid-session
+  // This prevents validation errors when switching languages during active typing
+  useEffect(() => {
+    if (startTime && !isFinished) {
+      // User is actively typing, reset everything
+      setResult(null);
+      reset();
+      generateWords();
+    }
+  }, [language]); // Only trigger on language change
+
   // Monkeytype-like restart shortcut (Tab)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

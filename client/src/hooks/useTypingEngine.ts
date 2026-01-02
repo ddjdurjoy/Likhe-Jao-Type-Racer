@@ -252,7 +252,7 @@ export function useTypingEngine({
         // fully correct word chars
         if (typed.length === expected.length && typed.every((v, idx) => v === expected[idx])) {
           correctWordChars += expected.length;
-          if (i < inputWords.length - 1 && !inputWord.endsWith("\n")) {
+          if (i < inputWords.length - 1) {
             correctSpaces++;
           }
         }
@@ -275,35 +275,54 @@ export function useTypingEngine({
     [getInputWords, getTargetWords, isFinished, startTime, mode, splitGraphemes]
   );
 
-  const calculateAccuracy = useCallback(() => {
-    // Monkeytype-style accuracy: correct typed characters / total typed characters.
-    // We use grapheme-aware counts (important for Bangla).
-    const chars = countChars(false);
-    const totalTyped = chars.allCorrectChars + chars.incorrectChars + chars.extraChars + chars.spaces;
-    // Spaces are user keypresses too; previously we counted them in totalTyped but not in correct,
-    // so even perfect runs would show <100%.
-    const correctTyped = chars.allCorrectChars + chars.spaces;
-    const acc = (correctTyped / totalTyped) * 100;
+  const calculateAccuracy = useCallback((final: boolean = false) => {
+    // Monkeytype-style accuracy: correct keystrokes / total keystrokes.
+    // Include current word for live updates, exclude for final
+    const chars = countChars(final);
+    
+    // Count all correct characters (both word chars and spaces)
+    const correctKeystrokes = chars.allCorrectChars + chars.correctSpaces;
+    
+    // Total keystrokes = all typed characters + all spaces
+    const totalKeystrokes = chars.allCorrectChars + chars.incorrectChars + chars.extraChars + chars.spaces;
+    
+    if (totalKeystrokes === 0) return 100;
+    
+    const acc = (correctKeystrokes / totalKeystrokes) * 100;
     return Number.isFinite(acc) ? acc : 100;
   }, [countChars]);
 
   const calculateWpmAndRaw = useCallback(
-    (secs: number, _final: boolean, withDecimalPoints?: boolean) => {
-      // Match requested formula:
-      //   WPM = completedWords / elapsedMinutes
-      // where completedWords = number of submitted words.
-      const minSeconds = 0.1;
+    (secs: number, final: boolean, withDecimalPoints?: boolean) => {
+      // Character-based WPM formula (standard typing test): (correct chars / 5) / minutes
+      // This updates in real-time as the user types, not just when words are submitted.
+      
+      // For live display, require minimum time to prevent unrealistic WPM spikes
+      // For final results, allow shorter times but use minimum to prevent division issues
+      const minSeconds = final ? 0.5 : 1.0;
       const testSeconds = Math.max(minSeconds, secs);
-      const chars = countChars(false);
+      
+      // Include current word for live updates, exclude for final
+      const chars = countChars(final);
 
       const minutes = testSeconds / 60;
-      const completedWords = inputHistoryRef.current.length;
+      
+      // WPM = (correct characters / 5) / minutes
+      // Correct chars includes both word chars and correct spaces
+      const correctChars = chars.correctWordChars + chars.correctSpaces;
+      const wpm = roundTo2((correctChars / 5) / minutes);
+      
+      // Raw WPM includes all typed characters (correct + incorrect + extra)
+      const allTypedChars = chars.allCorrectChars + chars.incorrectChars + chars.extraChars + chars.spaces;
+      const raw = roundTo2((allTypedChars / 5) / minutes);
 
-      const wpm = roundTo2(completedWords / minutes);
-      const raw = wpm;
-
-      const wpmOut = clamp(wpm, 0, 500);
-      const rawOut = clamp(raw, 0, 1000);
+      // For live display, cap at more realistic maximum to prevent confusion
+      // For final results, allow higher caps
+      const maxWpm = final ? 500 : 200;
+      const maxRaw = final ? 1000 : 300;
+      
+      const wpmOut = clamp(wpm, 0, maxWpm);
+      const rawOut = clamp(raw, 0, maxRaw);
 
       return {
         wpm: withDecimalPoints ? wpmOut : Math.round(wpmOut),
@@ -389,20 +408,16 @@ export function useTypingEngine({
   }, []);
 
   const getStats = useCallback((): TypingStats => {
-    // Match requested live formula: WPM = completedWords / elapsedMinutes
-    const { chars } = calculateWpmAndRaw(elapsedSeconds, false, false);
-    const acc = calculateAccuracy();
-
-    const minutes = Math.max(1 / 60, elapsedSeconds / 60); // prevent division by 0
-    const completedWords = inputHistoryRef.current.length;
-    const liveWpm = Math.round(clamp(completedWords / minutes, 0, 500));
+    // Use character-based WPM formula for live updates
+    const { wpm, chars } = calculateWpmAndRaw(elapsedSeconds, false, false);
+    const acc = calculateAccuracy(false);
 
     // Keep TypingStats compatible: use Monkeytype effective correct chars and total typed chars.
     const correctChars = chars.correctWordChars + chars.correctSpaces;
     const totalChars = chars.allCorrectChars + chars.incorrectChars + chars.extraChars + chars.spaces;
 
     return {
-      wpm: liveWpm,
+      wpm,
       accuracy: Math.round(acc),
       correctChars,
       totalChars,
@@ -437,7 +452,9 @@ export function useTypingEngine({
             extra++;
           } else if (tc === undefined && ec !== undefined) {
             // In time mode, Monkeytype doesn't penalize missed chars for the unfinished last word.
-            if (final || mode !== "time") missed++;
+            const isLast = i === typedWords.length - 1;
+            const isTime = mode === "time";
+            if (!isTime || !isLast) missed++;
           } else if (tc !== ec) {
             incorrect++;
           }
@@ -496,7 +513,7 @@ export function useTypingEngine({
       // Safety cap: prevents pathological values (e.g., if a device reports weird timing).
       const cappedWpm = clamp(wpm, 0, 350);
       const cappedRaw = clamp(raw, 0, 450);
-      const acc = roundTo2(calculateAccuracy());
+      const acc = roundTo2(calculateAccuracy(true));
 
       const final: PracticeResultStats = {
         wpm: cappedWpm,
@@ -557,12 +574,24 @@ export function useTypingEngine({
     if (!timeLimitSeconds || timeLimitSeconds <= 0) return;
     if (!startTime || isFinished) return;
 
+    let gracePeriodTimeout: number | null = null;
+
     const checkTimeLimit = () => {
       const secs = (Date.now() - startTime) / 1000;
       if (secs >= timeLimitSeconds) {
         if (stopOnWordEnd) {
           // mark end time but don't finish until space submits the word
           setEndTime(startTime + timeLimitSeconds * 1000);
+          
+          // Set a grace period: if user doesn't finish the word in 2 seconds, auto-finish anyway
+          if (!gracePeriodTimeout) {
+            gracePeriodTimeout = window.setTimeout(() => {
+              if (!isFinished) {
+                clearInterval(id);
+                finish("time");
+              }
+            }, 2000);
+          }
         } else {
           // Finish immediately when time runs out
           clearInterval(id);
@@ -573,7 +602,10 @@ export function useTypingEngine({
 
     const id = window.setInterval(checkTimeLimit, 50); // Check more frequently for accuracy
 
-    return () => window.clearInterval(id);
+    return () => {
+      window.clearInterval(id);
+      if (gracePeriodTimeout) window.clearTimeout(gracePeriodTimeout);
+    };
   }, [mode, timeLimitSeconds, startTime, isFinished, finish, stopOnWordEnd]);
 
   const recordAccuracyForAppend = useCallback(

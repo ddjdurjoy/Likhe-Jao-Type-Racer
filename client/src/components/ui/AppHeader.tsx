@@ -8,12 +8,29 @@ import { WeatherToggle } from "@/components/ui/WeatherToggle";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { SoundControls } from "@/components/ui/SoundControls";
 import { Download, Settings, UserRound, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGameStore } from "@/lib/stores/gameStore";
 import type { Difficulty } from "@shared/schema";
 import { useEffect, useMemo, useState } from "react";
@@ -44,7 +61,10 @@ export function AppHeader() {
     setCountry(me.data.country || "");
   }, [me.data]);
 
-  const needsEmailVerify = useMemo(() => !!me.data?.email && !me.data?.emailVerifiedAt, [me.data]);
+  const needsEmailVerify = useMemo(
+    () => !!me.data?.email && !me.data?.emailVerifiedAt,
+    [me.data]
+  );
   const [showSettings, setShowSettings] = useState(false);
   const { canInstall, promptInstall } = useInstallPrompt();
 
@@ -61,7 +81,11 @@ export function AppHeader() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: (err: any) => {
-      toast({ title: "Profile update failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+      toast({
+        title: "Profile update failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
     },
   });
 
@@ -80,7 +104,11 @@ export function AppHeader() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: (err: any) => {
-      toast({ title: "Account update failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+      toast({
+        title: "Account update failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
     },
   });
 
@@ -90,17 +118,29 @@ export function AppHeader() {
       return res.json();
     },
     onSuccess: (data: any) => {
-      toast({ title: "Verification requested", description: data?.devToken ? `Dev token: ${data.devToken}` : "Check your email." });
+      toast({
+        title: "Verification requested",
+        description: data?.devToken
+          ? `Dev token: ${data.devToken}`
+          : "Check your email.",
+      });
       if (data?.devToken) setVerifyToken(data.devToken);
     },
     onError: (err: any) => {
-      toast({ title: "Failed to request verification", description: err?.message || "Please try again.", variant: "destructive" as any });
+      toast({
+        title: "Failed to request verification",
+        description: err?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
     },
   });
 
   const changePassword = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/password", { currentPassword, newPassword });
+      const res = await apiRequest("POST", "/api/auth/password", {
+        currentPassword,
+        newPassword,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -109,13 +149,19 @@ export function AppHeader() {
       setNewPassword("");
     },
     onError: (err: any) => {
-      toast({ title: "Password change failed", description: err?.message || "Please try again.", variant: "destructive" as any });
+      toast({
+        title: "Password change failed",
+        description: err?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
     },
   });
 
   const verifyEmail = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/email/verify", { token: verifyToken.trim() });
+      const res = await apiRequest("POST", "/api/auth/email/verify", {
+        token: verifyToken.trim(),
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -124,7 +170,11 @@ export function AppHeader() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: (err: any) => {
-      toast({ title: "Verification failed", description: err?.message || "Invalid/expired token.", variant: "destructive" as any });
+      toast({
+        title: "Verification failed",
+        description: err?.message || "Invalid/expired token.",
+        variant: "destructive" as any,
+      });
     },
   });
 
@@ -154,36 +204,45 @@ export function AppHeader() {
               </SheetTrigger>
               <SheetContent side="left" className="p-0">
                 <SheetHeader className="p-4 border-b">
-                  <SheetTitle>Menu</SheetTitle>
+                  <SheetTitle>{language === "bn" ? "মেনু" : "Menu"}</SheetTitle>
                 </SheetHeader>
                 <div className="p-4 flex flex-col gap-2">
                   <Link href="/" className="px-3 py-2 rounded hover:bg-muted">
-                    Home
+                    {language === "bn" ? "গৃহপৃষ্ঠা" : "Home"}
                   </Link>
-                  <Link href="/practice" className="px-3 py-2 rounded hover:bg-muted">
-                    Practice
+                  <Link
+                    href="/practice"
+                    className="px-3 py-2 rounded hover:bg-muted"
+                  >
+                    {language === "bn" ? "অনুশীলন" : "Practice"}
                   </Link>
-                  <Link href="/garage" className="px-3 py-2 rounded hover:bg-muted">
-                    Garage
+                  <Link
+                    href="/garage"
+                    className="px-3 py-2 rounded hover:bg-muted"
+                  >
+                    {language === "bn" ? "গ্যারেজ" : "Garage"}
                   </Link>
-                  <Link href="/leaderboard" className="px-3 py-2 rounded hover:bg-muted">
-                    Leaderboard
+                  <Link
+                    href="/leaderboard"
+                    className="px-3 py-2 rounded hover:bg-muted"
+                  >
+                    {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
                   </Link>
-                  {me.data && (
-                    <Link href="/friends" className="px-3 py-2 rounded hover:bg-muted">
-                      Friends
-                    </Link>
-                  )}
 
                   <div className="mt-3 pt-3 border-t flex flex-col gap-2">
                     {!me.data ? (
-                      <Button onClick={() => setLocation("/player")} className="w-full">
-                        Profile
+                      <Button
+                        onClick={() => setLocation("/player")}
+                        className="w-full"
+                      >
+                        {language === "bn" ? "প্রোফাইল" : "Profile"}
                       </Button>
                     ) : (
                       <>
                         <Button variant="outline" className="w-full" asChild>
-                          <Link href="/player">Profile</Link>
+                          <Link href="/player">
+                            {language === "bn" ? "প্রোফাইল" : "Profile"}
+                          </Link>
                         </Button>
                         <Button
                           variant="destructive"
@@ -191,7 +250,7 @@ export function AppHeader() {
                           onClick={() => signout.mutate()}
                           disabled={signout.isPending}
                         >
-                          Sign out
+                          {language === "bn" ? "সাইন আউট" : "Sign out"}
                         </Button>
                       </>
                     )}
@@ -209,15 +268,21 @@ export function AppHeader() {
           </div>
 
           <nav className="hidden md:flex items-center gap-2 text-sm">
-            <Link href="/" className="px-2 py-1 rounded hover:bg-muted">Home</Link>
-            <Link href="/practice" className="px-2 py-1 rounded hover:bg-muted">Practice</Link>
-            <Link href="/garage" className="px-2 py-1 rounded hover:bg-muted">Garage</Link>
-            <Link href="/leaderboard" className="px-2 py-1 rounded hover:bg-muted">Leaderboard</Link>
-            {me.data && (
-              <>
-                <Link href="/friends" className="px-2 py-1 rounded hover:bg-muted">Friends</Link>
-              </>
-            )}
+            <Link href="/" className="px-2 py-1 rounded hover:bg-muted">
+              {language === "bn" ? "গৃহপৃষ্ঠা" : "Home"}
+            </Link>
+            <Link href="/practice" className="px-2 py-1 rounded hover:bg-muted">
+              {language === "bn" ? "অনুশীলন" : "Practice"}
+            </Link>
+            <Link href="/garage" className="px-2 py-1 rounded hover:bg-muted">
+              {language === "bn" ? "গ্যারেজ" : "Garage"}
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="px-2 py-1 rounded hover:bg-muted"
+            >
+              {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
+            </Link>
           </nav>
         </div>
 
@@ -236,7 +301,10 @@ export function AppHeader() {
               onClick={async () => {
                 const res = await promptInstall();
                 if (res.outcome === "accepted") {
-                  toast({ title: "Installed", description: "Likhe Jao was added to your home screen." });
+                  toast({
+                    title: "Installed",
+                    description: "Likhe Jao was added to your home screen.",
+                  });
                 }
               }}
             >
@@ -244,7 +312,12 @@ export function AppHeader() {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} aria-label="Settings">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+          >
             <Settings className="w-5 h-5" />
           </Button>
 
@@ -264,16 +337,27 @@ export function AppHeader() {
           <Tabs defaultValue="game" className="mt-2">
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="game">Game</TabsTrigger>
-              <TabsTrigger value="profile" disabled={!me.data}>Profile</TabsTrigger>
-              <TabsTrigger value="account" disabled={!me.data}>Account</TabsTrigger>
-              <TabsTrigger value="password" disabled={!me.data}>Password</TabsTrigger>
+              <TabsTrigger value="profile" disabled={!me.data}>
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="account" disabled={!me.data}>
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="password" disabled={!me.data}>
+                Password
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="game" className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Language</label>
-                <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={language}
+                  onValueChange={(v) => setLanguage(v as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="bn">Bengali</SelectItem>
@@ -282,8 +366,13 @@ export function AppHeader() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Difficulty</label>
-                <Select value={difficulty} onValueChange={(v) => setDifficulty(v as Difficulty)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={difficulty}
+                  onValueChange={(v) => setDifficulty(v as Difficulty)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="easy">Easy</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
@@ -295,22 +384,41 @@ export function AppHeader() {
 
             <TabsContent value="profile" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Edit your profile settings.</p>
+                <p className="text-sm text-muted-foreground">
+                  Edit your profile settings.
+                </p>
               ) : (
                 <>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Display name</label>
-                    <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={50} placeholder="Your display name" />
+                    <Input
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      maxLength={50}
+                      placeholder="Your display name"
+                    />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Username (unique)</label>
-                    <Input value={profileUsername} onChange={(e) => setProfileUsername(e.target.value)} maxLength={24} placeholder="username" />
-                    <p className="text-xs text-muted-foreground">This affects your public link: /racer/&lt;username&gt;</p>
+                    <label className="text-sm font-medium">
+                      Username (unique)
+                    </label>
+                    <Input
+                      value={profileUsername}
+                      onChange={(e) => setProfileUsername(e.target.value)}
+                      maxLength={24}
+                      placeholder="username"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This affects your public link: /racer/&lt;username&gt;
+                    </p>
                   </div>
 
                   <div className="flex justify-end">
-                    <Button onClick={() => saveProfileSettings.mutate()} disabled={saveProfileSettings.isPending}>
+                    <Button
+                      onClick={() => saveProfileSettings.mutate()}
+                      disabled={saveProfileSettings.isPending}
+                    >
                       {saveProfileSettings.isPending ? "Saving..." : "Save"}
                     </Button>
                   </div>
@@ -320,27 +428,47 @@ export function AppHeader() {
 
             <TabsContent value="account" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Edit your account.</p>
+                <p className="text-sm text-muted-foreground">
+                  Edit your account.
+                </p>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">First name</label>
-                      <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={50} />
+                      <Input
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        maxLength={50}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Last name</label>
-                      <Input value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={50} />
+                      <Input
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        maxLength={50}
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Email</label>
                     <div className="flex gap-2">
-                      <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+                      <Input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@example.com"
+                      />
                       {needsEmailVerify && (
-                        <Button variant="secondary" onClick={() => requestEmailVerify.mutate()} disabled={requestEmailVerify.isPending}>
-                          {requestEmailVerify.isPending ? "Sending..." : "Verify email"}
+                        <Button
+                          variant="secondary"
+                          onClick={() => requestEmailVerify.mutate()}
+                          disabled={requestEmailVerify.isPending}
+                        >
+                          {requestEmailVerify.isPending
+                            ? "Sending..."
+                            : "Verify email"}
                         </Button>
                       )}
                     </div>
@@ -352,21 +480,37 @@ export function AppHeader() {
                   {/* Dev-only: token entry. In production, user will click link from email. */}
                   {needsEmailVerify && (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Verification token</label>
+                      <label className="text-sm font-medium">
+                        Verification token
+                      </label>
                       <div className="flex gap-2">
-                        <Input value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} placeholder="Paste token" />
-                        <Button onClick={() => verifyEmail.mutate()} disabled={verifyEmail.isPending || verifyToken.trim().length < 6}>
+                        <Input
+                          value={verifyToken}
+                          onChange={(e) => setVerifyToken(e.target.value)}
+                          placeholder="Paste token"
+                        />
+                        <Button
+                          onClick={() => verifyEmail.mutate()}
+                          disabled={
+                            verifyEmail.isPending ||
+                            verifyToken.trim().length < 6
+                          }
+                        >
                           {verifyEmail.isPending ? "Verifying..." : "Confirm"}
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Dev mode: the token is returned by the server. Production: you’ll receive a link by email.
+                        Dev mode: the token is returned by the server.
+                        Production: you’ll receive a link by email.
                       </p>
                     </div>
                   )}
 
                   <div className="flex justify-end">
-                    <Button onClick={() => saveAccountSettings.mutate()} disabled={saveAccountSettings.isPending}>
+                    <Button
+                      onClick={() => saveAccountSettings.mutate()}
+                      disabled={saveAccountSettings.isPending}
+                    >
                       {saveAccountSettings.isPending ? "Saving..." : "Save"}
                     </Button>
                   </div>
@@ -376,24 +520,44 @@ export function AppHeader() {
 
             <TabsContent value="password" className="space-y-4">
               {!me.data ? (
-                <p className="text-sm text-muted-foreground">Change your password.</p>
+                <p className="text-sm text-muted-foreground">
+                  Change your password.
+                </p>
               ) : (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Current password</label>
-                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                    <label className="text-sm font-medium">
+                      Current password
+                    </label>
+                    <Input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">New password</label>
-                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Minimum 6 characters.
+                    </p>
                   </div>
                   <div className="flex justify-end">
                     <Button
                       onClick={() => changePassword.mutate()}
-                      disabled={changePassword.isPending || currentPassword.length < 1 || newPassword.length < 6}
+                      disabled={
+                        changePassword.isPending ||
+                        currentPassword.length < 1 ||
+                        newPassword.length < 6
+                      }
                     >
-                      {changePassword.isPending ? "Saving..." : "Change password"}
+                      {changePassword.isPending
+                        ? "Saving..."
+                        : "Change password"}
                     </Button>
                   </div>
                 </>

@@ -4,7 +4,6 @@ import { useGameStore, CARS } from "@/lib/stores/gameStore";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { LanguageSelector } from "@/components/ui/LanguageToggle";
 import { CarPreview } from "@/components/game/Car";
 import {

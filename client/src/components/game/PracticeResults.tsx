@@ -113,7 +113,7 @@ export function PracticeResults({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4"
       data-testid="practice-results"
       onMouseDown={(e) => {
         // allow click outside to close
@@ -121,77 +121,132 @@ export function PracticeResults({
       }}
     >
       <div className="max-w-4xl w-full max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <Card className="p-4 sm:p-6 md:p-8">
-          <div className="flex items-start justify-between gap-2 sm:gap-4">
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold">{language === "bn" ? "ফলাফল" : "Results"}</h2>
-              <div className="text-xs sm:text-sm text-muted-foreground">{subtitle}</div>
-              {headerAddon ? <div className="mt-2">{headerAddon}</div> : null}
+        <Card className="p-4 sm:p-6 md:p-8 bg-background/95 backdrop-blur-sm border-border/50">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 sm:h-8 bg-primary rounded-full" />
+              <div>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">{language === "bn" ? "ফলাফল" : "Test Complete"}</h2>
+                <div className="text-xs sm:text-sm text-muted-foreground mt-0.5">{subtitle}</div>
+              </div>
             </div>
-            <Button variant="outline" onClick={onClose} size="sm" className="shrink-0">
-              {language === "bn" ? "বন্ধ" : "Close"}
+            <Button variant="ghost" onClick={onClose} size="sm" className="shrink-0 hover:bg-muted/50 h-8 w-8 p-0">
+              <span className="text-lg">×</span>
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3 mt-4 sm:mt-6">
-            <ResultStat label="WPM" value={result.wpm} highlight badge={newPb ? (language === "bn" ? "নতুন PB" : "NEW PB") : undefined} />
-            <ResultStat label={language === "bn" ? "র" : "Raw"} value={result.rawWpm} />
-            <ResultStat label={language === "bn" ? "নির্ভুলতা" : "Accuracy"} value={`${result.accuracy}%`} />
-            <ResultStat label={language === "bn" ? "সামঞ্জস্য" : "Consistency"} value={`${result.consistency}%`} />
-            <ResultStat label={language === "bn" ? "ত্রুটি" : "Errors"} value={err} />
-            <ResultStat label={language === "bn" ? "সময়" : "Time"} value={`${result.timeSeconds}s`} />
-            {(extraStats ?? []).map((s) => (
-              <ResultStat key={s.label} label={s.label} value={s.value} highlight={s.highlight} badge={s.badge} />
-            ))}
+          {/* Main Stats - Monkeytype Style */}
+          <div className="space-y-6 mb-8">
+            {/* Primary Stats Row */}
+            <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-8">
+              {/* WPM - Large Display */}
+              <div className="flex-1 min-w-[180px]">
+                <div className="flex items-baseline gap-2 sm:gap-3">
+                  <div className={cn(
+                    "text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tabular-nums leading-none",
+                    newPb ? "text-primary" : "text-foreground"
+                  )}>
+                    {result.wpm}
+                  </div>
+                  <div className="flex flex-col gap-1 pb-1 sm:pb-2">
+                    <div className="text-base sm:text-lg font-semibold text-muted-foreground">WPM</div>
+                    {newPb && (
+                      <div className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 animate-pulse whitespace-nowrap">
+                        {language === "bn" ? "নতুন PB!" : "NEW PB!"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {pb !== null && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    {language === "bn" ? "সেরা" : "Personal best"}: <span className="font-semibold text-foreground">{pb}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Secondary Stats Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto">
+                <div>
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    {language === "bn" ? "নির্ভুলতা" : "Accuracy"}
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold tabular-nums">{result.accuracy}%</div>
+                </div>
+                <div>
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    {language === "bn" ? "র" : "Raw"}
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold tabular-nums text-muted-foreground">{result.rawWpm}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    {language === "bn" ? "সামঞ্জস্য" : "Consistency"}
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold tabular-nums">{result.consistency}%</div>
+                </div>
+                <div>
+                  <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                    {language === "bn" ? "সময়" : "Time"}
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold tabular-nums">{result.timeSeconds}s</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Errors Badge */}
+            {err > 0 && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                  {language === "bn" ? "ত্রুটি" : "Errors"}
+                </span>
+                <span className="text-lg font-bold text-destructive tabular-nums">{err}</span>
+              </div>
+            )}
           </div>
 
-          {pb !== null && (
-            <div className="mt-3 text-xs text-muted-foreground tabular-nums">
-              {language === "bn" ? "PB" : "pb"}: <span className="text-foreground font-semibold">{pb}</span>
-              {newPb ? (
-                <span className="ml-2 text-primary font-semibold">
-                  {language === "bn" ? "(নতুন!)" : "(new!)"}
-                </span>
-              ) : null}
-            </div>
-          )}
-
-          <div className="mt-3 sm:mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            <div className="rounded-lg border border-card-border p-3 sm:p-4 bg-card/30">
-              <div className="text-xs sm:text-sm font-semibold text-foreground mb-3 flex items-center justify-between">
-                <span>{language === "bn" ? "পারফরম্যান্স গ্রাফ" : "Performance Chart"}</span>
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Performance Chart - Full Width on Mobile/Tablet */}
+            <div className="rounded-xl border border-border/50 p-4 sm:p-5 bg-muted/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                  {language === "bn" ? "পারফরম্যান্স" : "Performance"}
+                </h3>
                 {chartData.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-normal">
+                  <span className="text-xs text-muted-foreground tabular-nums">
                     {language === "bn" ? `${chartData.length} সেকেন্ড` : `${chartData.length}s`}
                   </span>
                 )}
               </div>
               {chartData.length ? (
-                <div className="h-[200px] sm:h-[220px]">
+                <div className="h-[220px] sm:h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                    <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 20, left: -5 }}>
                       <defs>
                         <linearGradient id="colorWpm" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
                           <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                         </linearGradient>
                         <linearGradient id="colorRaw" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.2}/>
+                          <stop offset="5%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.25}/>
                           <stop offset="95%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} vertical={false} />
                       <XAxis 
                         dataKey="t" 
                         tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
                         stroke="hsl(var(--border))"
-                        label={{ value: language === "bn" ? "সময় (সে)" : "Time (s)", position: 'insideBottom', offset: -5, fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        label={{ value: language === "bn" ? "সময় (সে)" : "seconds", position: 'insideBottom', offset: -12, fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                       />
                       <YAxis 
                         tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
                         stroke="hsl(var(--border))"
-                        width={35}
-                        label={{ value: 'WPM', angle: -90, position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                        tickLine={false}
+                        width={40}
+                        label={{ value: 'wpm', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                       />
                       <Tooltip
                         contentStyle={{
@@ -201,8 +256,8 @@ export function PracticeResults({
                           fontSize: 12,
                           padding: "8px 12px",
                         }}
-                        labelStyle={{ fontWeight: 'bold', marginBottom: 4 }}
-                        labelFormatter={(l) => `${language === "bn" ? "সময়:" : "Time:"} ${l}s`}
+                        labelStyle={{ fontWeight: '600', marginBottom: 4 }}
+                        labelFormatter={(l) => `${l}s`}
                         formatter={(value: any, name: string) => {
                           const label = name === 'wpm' ? 'WPM' : (language === "bn" ? "রও" : "Raw");
                           return [value, label];
@@ -212,7 +267,7 @@ export function PracticeResults({
                         type="monotone"
                         dataKey="raw"
                         stroke="hsl(var(--muted-foreground))"
-                        strokeWidth={1.5}
+                        strokeWidth={2}
                         dot={false}
                         fill="url(#colorRaw)"
                         name="raw"
@@ -222,7 +277,7 @@ export function PracticeResults({
                         type="monotone"
                         dataKey="wpm"
                         stroke="hsl(var(--primary))"
-                        strokeWidth={2.5}
+                        strokeWidth={3}
                         dot={false}
                         fill="url(#colorWpm)"
                         name="wpm"
@@ -232,40 +287,47 @@ export function PracticeResults({
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
-                  {language === "bn" ? "গ্রাফ ডেটা উপলব্ধ নেই" : "No chart data available"}
+                <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+                  {language === "bn" ? "গ্রাফ ডেটা উপলব্ধ নেই" : "No chart data"}
                 </div>
               )}
+            </div>
 
+            {/* Details / History Section */}
+            <div className="rounded-xl border border-border/50 p-5 bg-muted/20">
               {history10.length > 0 ? (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="text-xs sm:text-sm font-semibold text-foreground mb-3 flex items-center justify-between">
-                    <span>{language === "bn" ? "সাম্প্রতিক ইতিহাস" : "Recent History"}</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+                      {language === "bn" ? "সাম্প্রতিক ইতিহাস" : "Recent History"}
+                    </h3>
+                    <span className="text-xs text-muted-foreground">
                       {language === "bn" ? `${history10.length} রান` : `${history10.length} runs`}
                     </span>
                   </div>
-                  <div className="h-[140px] sm:h-[160px]">
+                  <div className="h-[220px] sm:h-[240px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={history10} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
+                      <LineChart data={history10} margin={{ top: 5, right: 5, bottom: 20, left: -5 }}>
                         <defs>
                           <linearGradient id="colorHistoryWpm" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
                             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05}/>
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} vertical={false} />
                         <XAxis 
                           dataKey="run" 
                           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                           stroke="hsl(var(--border))"
-                          label={{ value: language === "bn" ? "রান #" : "Run #", position: 'insideBottom', offset: -5, fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          label={{ value: language === "bn" ? "রান #" : "test #", position: 'insideBottom', offset: -12, fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                         />
                         <YAxis 
                           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                           stroke="hsl(var(--border))"
-                          width={35}
-                          label={{ value: 'WPM', angle: -90, position: 'insideLeft', fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                          tickLine={false}
+                          width={40}
+                          label={{ value: 'wpm', angle: -90, position: 'insideLeft', fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                         />
                         <Tooltip
                           contentStyle={{
@@ -275,8 +337,8 @@ export function PracticeResults({
                             fontSize: 12,
                             padding: "8px 12px",
                           }}
-                          labelStyle={{ fontWeight: 'bold', marginBottom: 4 }}
-                          labelFormatter={(l) => `${language === "bn" ? "রান" : "Run"} #${l}`}
+                          labelStyle={{ fontWeight: '600', marginBottom: 4 }}
+                          labelFormatter={(l) => `${language === "bn" ? "রান" : "Test"} #${l}`}
                           formatter={(value: any, name: string) => {
                             const label = name === 'wpm' ? 'WPM' : name === 'acc' ? (language === "bn" ? "নির্ভুলতা" : "Accuracy") : name;
                             return [value, label];
@@ -286,93 +348,94 @@ export function PracticeResults({
                           type="monotone" 
                           dataKey="wpm" 
                           stroke="hsl(var(--primary))" 
-                          strokeWidth={2}
-                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 3 }}
-                          activeDot={{ r: 5 }}
+                          strokeWidth={2.5}
+                          dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6 }}
                           fill="url(#colorHistoryWpm)"
                           name="wpm"
                         />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
-              ) : null}
-            </div>
+                </>
+              ) : (
+                <div className="h-full">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-4">
+                    {language === "bn" ? "ডিটেইলস" : "Details"}
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                      {language === "bn" ? "ক্যারেক্টারস" : "Characters"}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm tabular-nums">
+                      <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.correctWordChars + result.correctSpaces)} />
+                      <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.incorrectChars)} />
+                      <ErrorRow label={language === "bn" ? "মিস" : "Missed"} value={Math.round(result.missedChars)} />
+                      <ErrorRow label={language === "bn" ? "এক্সট্রা" : "Extra"} value={Math.round(result.extraChars)} />
+                    </div>
 
-            <div className="rounded-lg border border-card-border p-3 sm:p-4">
-              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                {language === "bn" ? "ডিটেইলস" : "Details"}
-              </div>
-
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <div className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">
-                    {language === "bn" ? "ক্যারেক্টারস" : "Characters"}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm tabular-nums">
-                    <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.correctWordChars + result.correctSpaces)} />
-                    <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.incorrectChars)} />
-                    <ErrorRow label={language === "bn" ? "মিস" : "Missed"} value={Math.round(result.missedChars)} />
-                    <ErrorRow label={language === "bn" ? "এক্সট্রা" : "Extra"} value={Math.round(result.extraChars)} />
-                    <ErrorRow label={language === "bn" ? "স্পেস" : "Spaces"} value={Math.round(result.spaces)} />
-                    <ErrorRow label={language === "bn" ? "মোট" : "Total"} value={Math.round(result.totalChars)} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] sm:text-[11px] text-muted-foreground uppercase tracking-wide mb-1.5 sm:mb-2">
-                    {language === "bn" ? "কিস্ট্রোকস" : "Keystrokes"}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm tabular-nums">
-                    <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.accuracyCorrect)} />
-                    <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.accuracyIncorrect)} />
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {language === "bn"
-                      ? `এটা কী-প্রেস ভিত্তিক একুরেসি: ${result.accuracy}%`
-                      : `Keypress-based accuracy: ${result.accuracy}%`}
+                    <div className="mt-4">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">
+                        {language === "bn" ? "কিস্ট্রোকস" : "Keystrokes"}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm tabular-nums">
+                        <ErrorRow label={language === "bn" ? "সঠিক" : "Correct"} value={Math.round(result.accuracyCorrect)} />
+                        <ErrorRow label={language === "bn" ? "ভুল" : "Incorrect"} value={Math.round(result.accuracyIncorrect)} />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
+          {/* Word Results */}
           {result.wordResults?.length ? (
-            <div className="mt-3 sm:mt-4 rounded-lg border border-card-border p-3 sm:p-4">
-              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                {language === "bn" ? "শব্দ" : "Words"}
-              </div>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 leading-none">
+            <div className="rounded-xl border border-border/50 p-5 bg-muted/20 mb-6">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground mb-4">
+                {language === "bn" ? "শব্দ বিশ্লেষণ" : "Word Analysis"}
+              </h3>
+              <div className="flex flex-wrap gap-2 leading-none">
                 {result.wordResults.slice(0, 250).map((w, idx) => (
                   <WordPill key={idx} w={w} />
                 ))}
               </div>
               {result.wordResults.length > 250 && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {language === "bn" ? "শুধু প্রথম ২৫০টি দেখানো হচ্ছে" : "Showing first 250 words"}
+                <div className="mt-3 text-xs text-muted-foreground">
+                  {language === "bn" ? "প্রথম ২৫০টি শব্দ দেখানো হচ্ছে" : "Showing first 250 words"}
                 </div>
               )}
             </div>
           ) : null}
 
           
-          <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button className="flex-1" onClick={onRestart} size="sm">
-              {language === "bn" ? "আবার" : "Restart"}
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              className="flex-1 h-12 text-base font-semibold" 
+              onClick={onRestart}
+              size="lg"
+            >
+              {language === "bn" ? "আবার শুরু করুন" : "Next test"}
             </Button>
 
             <Button
-              className="flex-1"
+              className="flex-1 h-12 text-base"
               variant="secondary"
               onClick={() => setIsReplayOpen(true)}
               disabled={!result.replay?.events?.length}
               title={!result.replay?.events?.length ? "Replay not available" : undefined}
-              size="sm"
+              size="lg"
             >
-              {language === "bn" ? "রিপ্লে দেখুন" : "Watch replay"}
+              {language === "bn" ? "রিপ্লে" : "Watch replay"}
             </Button>
 
-            <Button className="flex-1" variant="outline" onClick={onContinue} size="sm">
+            <Button 
+              className="flex-1 h-12 text-base" 
+              variant="outline" 
+              onClick={onContinue}
+              size="lg"
+            >
               {language === "bn" ? "চালিয়ে যান" : "Continue"}
             </Button>
           </div>
