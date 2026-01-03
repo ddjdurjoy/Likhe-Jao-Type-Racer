@@ -84,7 +84,7 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
     };
   }, [theme, prefersReduced]);
 
-  // Optional weather particles (rain/snow) with time-based motion to avoid slowdowns after big browser events
+  // Optional weather particles (rain/snow)
   useEffect(() => {
     if (!weatherOn) return;
     const canvas = weatherCanvasRef.current;
@@ -101,62 +101,25 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
     resize();
     window.addEventListener("resize", resize);
 
-    const onMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      cursorRef.current.x = e.clientX - rect.left;
-      cursorRef.current.y = e.clientY - rect.top;
-      cursorRef.current.active = true;
-    };
-    window.addEventListener('mousemove', onMove);
+   const onMove = (e: MouseEvent) => {
+     const rect = canvas.getBoundingClientRect();
+     cursorRef.current.x = e.clientX - rect.left;
+     cursorRef.current.y = e.clientY - rect.top;
+     cursorRef.current.active = true;
+   };
+   window.addEventListener('mousemove', onMove);
 
-    const baseCount = weather === 'rain' ? 140 : weather === 'snow' ? 120 : 80;
-    const area = canvas.clientWidth * canvas.clientHeight;
-    const scale = Math.min(1, area / (1280 * 720));
-    const count = Math.max(40, Math.floor(baseCount * (0.6 + 0.4 * scale)));
-
-    const reseed = () => {
-      particlesRef.current = Array.from({ length: count }, () => ({
-        x: Math.random() * canvas.clientWidth,
-        y: Math.random() * canvas.clientHeight,
-        v: weather === 'rain' ? 3 + Math.random() * 3 : weather === 'snow' ? 0.5 + Math.random() * 0.8 : 1 + Math.random() * 1.5,
-        s: weather === 'rain' ? 2 + Math.random() * 2 : weather === 'snow' ? 1 : 2 + Math.random() * 2,
-      }));
-    };
-    reseed();
+    const count = weather === 'rain' ? 140 : weather === 'snow' ? 120 : 80;
+    particlesRef.current = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.clientWidth,
+      y: Math.random() * canvas.clientHeight,
+      v: weather === 'rain' ? 3 + Math.random() * 3 : weather === 'snow' ? 0.5 + Math.random() * 0.8 : 1 + Math.random() * 1.5,
+      s: weather === 'rain' ? 2 + Math.random() * 2 : weather === 'snow' ? 1 : 2 + Math.random() * 2,
+    }));
 
     let raf = 0;
-    let last = performance.now();
-    let slowFrames = 0;
-
-    const restartLoop = () => {
-      cancelAnimationFrame(raf);
-      last = performance.now();
-      slowFrames = 0;
-      raf = requestAnimationFrame(loop);
-    };
-
-    const resetTime = () => { restartLoop(); };
-    const onVis = () => { if (document.visibilityState === 'visible') restartLoop(); else cancelAnimationFrame(raf); };
-    document.addEventListener('visibilitychange', onVis);
-    document.addEventListener('fullscreenchange', resetTime);
-
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      const now = performance.now();
-      let dt = Math.min(3, (now - last) / 16.6667) || 1; // normalize to ~60fps units, clamp
-      // If the frame gap is very large, reseed to avoid stuck motion artifacts
-      if (now - last > 250) {
-        reseed();
-      }
-      // Detect very large dt (e.g., after fullscreen) and smooth it over a few frames
-      if (dt > 1.8) {
-        slowFrames = Math.min(10, slowFrames + 1);
-        dt = 1 + (dt - 1) / (1 + slowFrames); // ease down overshoot
-      } else if (slowFrames > 0) {
-        slowFrames -= 1;
-      }
-      last = now;
-
       const w = canvas.clientWidth, h = canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
 
@@ -168,8 +131,8 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(p.x + (p.s || 2), p.y + 8 + (p.s || 2) * 1.5);
           ctx.stroke();
-          p.y += p.v * dt;
-          p.x += 0.2 * dt;
+          p.y += p.v;
+          p.x += 0.2;
           // avoid cursor
           if (cursorRef.current.active) {
             const dx = p.x - cursorRef.current.x;
@@ -178,13 +141,13 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
             const R = 110;
             if (dist < R) {
               const f = (1 - dist / R);
-              const k = 3 * dt;
+              const k = 3;
               const ax = (dx / dist) * f * k;
               const ay = (dy / dist) * f * k;
               p.x += ax; p.y += ay;
               const minD = 10;
               if (dist < minD) {
-                const push = (minD - dist) * dt;
+                const push = minD - dist;
                 p.x += (dx / dist) * push;
                 p.y += (dy / dist) * push;
               }
@@ -198,8 +161,8 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
           ctx.beginPath();
           ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
           ctx.fill();
-          p.y += p.v * dt;
-          p.x += Math.sin(p.y * 0.02) * 0.3 * dt;
+          p.y += p.v;
+          p.x += Math.sin(p.y * 0.02) * 0.3;
           // avoid cursor (subtle for snow)
           if (cursorRef.current.active) {
             const dx = p.x - cursorRef.current.x;
@@ -208,13 +171,13 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
             const R = 90;
             if (dist < R) {
               const f = (1 - dist / R);
-              const k = 1 * dt;
+              const k = 1;
               const ax = (dx / dist) * f * k;
               const ay = (dy / dist) * f * k;
               p.x += ax; p.y += ay;
               const minD = 8;
               if (dist < minD) {
-                const push = (minD - dist) * dt;
+                const push = minD - dist;
                 p.x += (dx / dist) * push;
                 p.y += (dy / dist) * push;
               }
@@ -231,8 +194,8 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
           ctx.rotate((p.y + p.x) * 0.01);
           ctx.fillRect(-size/2, -size/4, size, size/2);
           ctx.restore();
-          p.y += p.v * dt;
-          p.x += Math.sin(p.y * 0.03) * 0.6 * dt;
+          p.y += p.v;
+          p.x += Math.sin(p.y * 0.03) * 0.6;
           // avoid cursor
           if (cursorRef.current.active) {
             const dx = p.x - cursorRef.current.x;
@@ -241,13 +204,13 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
             const R = 120;
             if (dist < R) {
               const f = (1 - dist / R);
-              const k = 2.2 * dt;
+              const k = 2.2;
               const ax = (dx / dist) * f * k;
               const ay = (dy / dist) * f * k;
               p.x += ax; p.y += ay;
               const minD = 12;
               if (dist < minD) {
-                const push = (minD - dist) * dt;
+                const push = minD - dist;
                 p.x += (dx / dist) * push;
                 p.y += (dy / dist) * push;
               }
@@ -262,8 +225,8 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
           ctx.beginPath();
           ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
           ctx.fill();
-          p.y += (0.8 + p.v * 0.3) * dt;
-          p.x += Math.cos(p.y * 0.02) * 0.5 * dt;
+          p.y += 0.8 + p.v * 0.3;
+          p.x += Math.cos(p.y * 0.02) * 0.5;
           // avoid cursor
           if (cursorRef.current.active) {
             const dx = p.x - cursorRef.current.x;
@@ -272,13 +235,13 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
             const R = 120;
             if (dist < R) {
               const f = (1 - dist / R);
-              const k = 1.8 * dt;
+              const k = 1.8;
               const ax = (dx / dist) * f * k;
               const ay = (dy / dist) * f * k;
               p.x += ax; p.y += ay;
               const minD = 12;
               if (dist < minD) {
-                const push = (minD - dist) * dt;
+                const push = minD - dist;
                 p.x += (dx / dist) * push;
                 p.y += (dy / dist) * push;
               }
@@ -293,9 +256,6 @@ export const AnimatedBackground = memo(function AnimatedBackground({ wpm = 0, sh
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      window.removeEventListener('mousemove', onMove);
-      document.removeEventListener('visibilitychange', resetTime);
-      document.removeEventListener('fullscreenchange', resetTime);
     };
   }, [weatherOn, weather]);
 

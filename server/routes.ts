@@ -1,10 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import {
-  insertUserSchema,
-  insertRaceResultSchema,
-} from "@shared/schema";
+import { insertUserSchema, insertRaceResultSchema } from "@shared/schema";
 import { z } from "zod";
 
 import { registerAuthRoutes } from "./authRoutes";
@@ -15,7 +12,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-
   registerAuthRoutes(app);
   registerPracticeLeaderboardRoutes(app);
   registerRoomRoutes(app);
@@ -79,8 +75,11 @@ export async function registerRoutes(
       if (totalRaces >= 25) unlockedCars.push(4);
 
       res.json({
+        id: user.id,
         username: user.username,
-        avatarUrl: canSee(user.avatarVisibility) ? user.avatarUrl ?? null : null,
+        avatarUrl: canSee(user.avatarVisibility)
+          ? user.avatarUrl ?? null
+          : null,
         bio: canSee(user.bioVisibility) ? user.bio ?? null : null,
         selectedCar: user.selectedCar ?? 0,
         stats: stats ?? null,
@@ -98,7 +97,9 @@ export async function registerRoutes(
         return res.status(400).json({ error: parsed.error.message });
       }
 
-      const existingUser = await storage.getUserByUsername(parsed.data.username);
+      const existingUser = await storage.getUserByUsername(
+        parsed.data.username
+      );
       if (existingUser) {
         return res.json(existingUser);
       }
@@ -148,7 +149,10 @@ export async function registerRoutes(
 
   app.patch("/api/stats/:userId", async (req, res) => {
     try {
-      const stats = await storage.updatePlayerStats(req.params.userId, req.body);
+      const stats = await storage.updatePlayerStats(
+        req.params.userId,
+        req.body
+      );
       if (!stats) {
         return res.status(404).json({ error: "Stats not found" });
       }
@@ -182,18 +186,27 @@ export async function registerRoutes(
 
       if (existingStats) {
         const newTotalRaces = (existingStats.totalRaces ?? 0) + 1;
-        const newWins = parsed.data.position === 1
-          ? (existingStats.wins ?? 0) + 1
-          : existingStats.wins ?? 0;
-        const newBestWpm = Math.max(existingStats.bestWpm ?? 0, parsed.data.wpm);
+        const newWins =
+          parsed.data.position === 1
+            ? (existingStats.wins ?? 0) + 1
+            : existingStats.wins ?? 0;
+        const newBestWpm = Math.max(
+          existingStats.bestWpm ?? 0,
+          parsed.data.wpm
+        );
         const newAvgWpm =
-          ((existingStats.avgWpm ?? 0) * (existingStats.totalRaces ?? 0) + parsed.data.wpm) /
+          ((existingStats.avgWpm ?? 0) * (existingStats.totalRaces ?? 0) +
+            parsed.data.wpm) /
           newTotalRaces;
         const newAccuracy =
-          ((existingStats.accuracy ?? 0) * (existingStats.totalRaces ?? 0) + parsed.data.accuracy) /
+          ((existingStats.accuracy ?? 0) * (existingStats.totalRaces ?? 0) +
+            parsed.data.accuracy) /
           newTotalRaces;
-        const newTotalWords = (existingStats.totalWords ?? 0) + parsed.data.wordsTyped;
-        const newPlayTime = (existingStats.playTimeSeconds ?? 0) + Math.round(parsed.data.raceTime);
+        const newTotalWords =
+          (existingStats.totalWords ?? 0) + parsed.data.wordsTyped;
+        const newPlayTime =
+          (existingStats.playTimeSeconds ?? 0) +
+          Math.round(parsed.data.raceTime);
 
         await storage.updatePlayerStats(userId, {
           totalRaces: newTotalRaces,
@@ -225,6 +238,100 @@ export async function registerRoutes(
 
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Friend System Routes
+
+  // Search users to add as friends
+  app.get("/api/users/search", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const q = req.query.q as string;
+      if (!q || q.length < 2) return res.json([]);
+      const users = await storage.searchUsers(q);
+      // Filter out self
+      const others = users.filter((u: any) => u.id !== req.session.userId);
+      res.json(others);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to search users" });
+    }
+  });
+
+  // Send friend request
+  app.post("/api/friends/request", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { toUserId } = req.body;
+      if (!toUserId) return res.status(400).json({ error: "Missing toUserId" });
+      if (toUserId === req.session.userId)
+        return res.status(400).json({ error: "Cannot add self" });
+
+      await storage.createFriendRequest(req.session.userId, toUserId);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to send friend request" });
+    }
+  });
+
+  // List pending friend requests
+  app.get("/api/friends/requests", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const requests = await storage.listFriendRequests(req.session.userId);
+      // Enrich with sender details
+      const enriched = await Promise.all(
+        requests.map(async (r: any) => {
+          const fromUser = await storage.getUser(r.fromUserId);
+          return { ...r, fromUser };
+        })
+      );
+      res.json(enriched);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to list friend requests" });
+    }
+  });
+
+  // Respond to friend request
+  app.post("/api/friends/respond", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const { requestId, accept } = req.body;
+      if (!requestId)
+        return res.status(400).json({ error: "Missing requestId" });
+
+      await storage.respondFriendRequest(requestId, accept);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to respond to request" });
+    }
+  });
+
+  // List friends
+  app.get("/api/friends", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      const friends = await storage.listFriends(req.session.userId);
+      res.json(friends);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to list friends" });
+    }
+  });
+
+  // Remove friend
+  app.delete("/api/friends/:id", async (req: any, res) => {
+    if (!req.session?.userId)
+      return res.status(401).json({ error: "Unauthorized" });
+    try {
+      await storage.removeFriend(req.session.userId, req.params.id);
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove friend" });
+    }
   });
 
   return httpServer;

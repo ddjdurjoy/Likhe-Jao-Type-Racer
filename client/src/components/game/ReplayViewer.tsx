@@ -53,7 +53,8 @@ export function ReplayViewer({ replay, language, onClose }: ReplayViewerProps) {
     replay.promptWords,
     currentText,
     events,
-    eventIndex
+    eventIndex,
+    language
   );
 
   // Playback animation loop
@@ -336,15 +337,39 @@ function useWordsDisplay(
   promptWords: string[],
   currentText: string,
   events: ReplayEvent[],
-  eventIndex: number
+  eventIndex: number,
+  language: "en" | "bn"
 ) {
   const typedWords = currentText.split(" ");
   const currentWordIndex = typedWords.length - 1;
 
+  // Grapheme splitter helper
+  const splitGraphemes = (text: string) => {
+    if (!text) return [];
+    try {
+      // @ts-ignore
+      if (typeof Intl !== "undefined" && (Intl as any).Segmenter) {
+        // @ts-ignore
+        const seg = new (Intl as any).Segmenter(language, { granularity: "grapheme" });
+        const out: string[] = [];
+        // @ts-ignore
+        for (const s of seg.segment(text)) {
+          out.push(s.segment);
+        }
+        return out;
+      }
+    } catch {}
+    return Array.from(text);
+  };
+
   const displayWords = promptWords.map((expectedWord, idx) => {
     const typedWord = typedWords[idx] || "";
-    const chars = expectedWord.split("").map((expectedChar, charIdx) => {
-      const typedChar = typedWord[charIdx];
+    // Use grapheme splitting for both expected and typed words
+    const expectedGraphemes = splitGraphemes(expectedWord);
+    const typedGraphemes = splitGraphemes(typedWord);
+
+    const chars = expectedGraphemes.map((expectedChar, charIdx) => {
+      const typedChar = typedGraphemes[charIdx];
       let status: "correct" | "incorrect" | "pending" = "pending";
 
       if (typedChar !== undefined) {
@@ -360,9 +385,9 @@ function useWordsDisplay(
 
     // Handle extra characters
     const extraChars: Array<{ char: string; status: "correct" | "incorrect" | "pending"; typed: string }> = [];
-    if (typedWord.length > expectedWord.length) {
-      const extra = typedWord.slice(expectedWord.length);
-      extra.split("").forEach((char) => {
+    if (typedGraphemes.length > expectedGraphemes.length) {
+      const extra = typedGraphemes.slice(expectedGraphemes.length);
+      extra.forEach((char) => {
         extraChars.push({ char, status: "incorrect", typed: char });
       });
     }

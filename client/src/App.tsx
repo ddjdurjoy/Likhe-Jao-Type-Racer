@@ -14,6 +14,8 @@ import LocalRace from "@/pages/LocalRace";
 import Practice from "@/pages/Practice";
 import Garage from "@/pages/Garage";
 import Leaderboard from "@/pages/Leaderboard";
+import Friends from "@/pages/Friends";
+import PublicProfile from "@/pages/PublicProfile";
 import BotRace from "@/pages/BotRace";
 import Player from "@/pages/Player";
 import Race from "@/pages/Race";
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/practice" component={Practice} />
       <Route path="/garage" component={Garage} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/friends" component={Friends} />
+      <Route path="/racer/:username" component={PublicProfile} />
       <Route path="/bot-race" component={BotRace} />
       <Route path="/player" component={Player} />
       <Route path="/race" component={Race} />

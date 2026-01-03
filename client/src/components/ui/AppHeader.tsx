@@ -228,6 +228,12 @@ export function AppHeader() {
                   >
                     {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
                   </Link>
+                  <Link
+                    href="/friends"
+                    className="px-3 py-2 rounded hover:bg-muted"
+                  >
+                   {language === "bn" ? "বন্ধুরা" : "Friends"}
+                  </Link>
 
                   <div className="mt-3 pt-3 border-t flex flex-col gap-2">
                     {!me.data ? (
@@ -282,6 +288,12 @@ export function AppHeader() {
               className="px-2 py-1 rounded hover:bg-muted"
             >
               {language === "bn" ? "লিডারবোর্ড" : "Leaderboard"}
+            </Link>
+            <Link
+              href="/friends"
+              className="px-2 py-1 rounded hover:bg-muted"
+            >
+              {language === "bn" ? "বন্ধুরা" : "Friends"}
             </Link>
           </nav>
         </div>

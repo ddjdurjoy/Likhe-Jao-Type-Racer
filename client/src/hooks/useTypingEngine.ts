@@ -97,6 +97,7 @@ type CharCount = {
   extraChars: number;
   missedChars: number;
   correctSpaces: number;
+  validSpaces: number;
 };
 
 export function useTypingEngine({
@@ -218,6 +219,7 @@ export function useTypingEngine({
       let missedChars = 0;
       let spaces = 0;
       let correctSpaces = 0;
+      let validSpaces = 0;
 
       const includeCurrent = !isFinished && startTime !== null;
       const inputWords = getInputWords(includeCurrent);
@@ -259,6 +261,11 @@ export function useTypingEngine({
 
         if (i < inputWords.length - 1) {
           spaces++;
+          // A space is valid (correct char) if we haven't exceeded the target word list
+          // i.e., there was a word expected after this one.
+          if (i < targetWords.length - 1) {
+            validSpaces++;
+          }
         }
       }
 
@@ -270,6 +277,7 @@ export function useTypingEngine({
         extraChars,
         missedChars,
         correctSpaces,
+        validSpaces,
       };
     },
     [getInputWords, getTargetWords, isFinished, startTime, mode, splitGraphemes]
@@ -280,8 +288,9 @@ export function useTypingEngine({
     // Include current word for live updates, exclude for final
     const chars = countChars(final);
     
-    // Count all correct characters (both word chars and spaces)
-    const correctKeystrokes = chars.allCorrectChars + chars.correctSpaces;
+    // Count all correct characters (both word chars and VALID spaces)
+    // For accuracy, a space is correct if it matches the expected space, even if the word was wrong.
+    const correctKeystrokes = chars.allCorrectChars + chars.validSpaces;
     
     // Total keystrokes = all typed characters + all spaces
     const totalKeystrokes = chars.allCorrectChars + chars.incorrectChars + chars.extraChars + chars.spaces;
@@ -291,6 +300,7 @@ export function useTypingEngine({
     const acc = (correctKeystrokes / totalKeystrokes) * 100;
     return Number.isFinite(acc) ? acc : 100;
   }, [countChars]);
+
 
   const calculateWpmAndRaw = useCallback(
     (secs: number, final: boolean, withDecimalPoints?: boolean) => {
